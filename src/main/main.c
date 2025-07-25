@@ -1,12 +1,86 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
 
 #include "main.h"
 #include "display.h"
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
 
-    if(argc == 1){
+    if (argc == 1)
+    {
         printHelpGeneral();
+        return 0;
+    }
+
+    char *mainCMD = argv[1];
+
+    if (strcmp(mainCMD, "create") == 0)
+    {
+        int length = 1;
+        char *params[length];
+        int st1 = setArrayToNull((void **)params, length);
+
+        if (st1 == -1)
+        {
+            printf("[ERROR] : Function setArrayToNull failed! | main");
+            return -1;
+        }
+        
+        for (int i = 2; i < argc; i += 2)
+        {
+            if(strcmp(argv[i], "-h") == 0){
+                if(argc != 3){
+                    printInvalidCMD();
+                    return -1;
+                }
+                else{
+                    printHelpCreate();
+                    return 0;
+                }
+            }
+
+            else if (strcmp(argv[i], "-p") == 0)
+            {
+                if(argc <= i + 1){
+                    printInvalidCMD();
+                    return -1;
+                }
+                params[0] = argv[i + 1];
+            }
+            else
+            {
+                printInvalidCMD();
+                return -1;
+            }
+        }
+
+        
+    }
+
+    else if(strcmp(mainCMD, "-h") == 0){
+        if(argv[argc - 1] != mainCMD){
+            printInvalidCMD();
+            return -1;
+        }
+
+        printHelpGeneral();
+        return 0;
+    }
+
+    else if(strcmp(mainCMD, "-v") == 0){
+        if(argv[argc - 1] != mainCMD){
+            printInvalidCMD();
+            return -1;
+        }
+
+        printVersion();
+        return 0;
+    }
+    else{
+        printInvalidCMD();
+        return -1;
     }
 }
 
@@ -18,9 +92,92 @@ void printHelpGeneral()
     printf(LINE, "For a specific command", "cbuilder [COMMAND] [ARGUMENTS]");
     printf(SEPERATOR);
     printf(HEADING, "C O M M A N D S");
-    printf(LINE, "build");
+    printf(LINE, "create", "creates the project structure and the cbuilder file");
     printf(SEPERATOR);
     printf(HEADING, "A R G U M E N T S");
-    printf(LINE, "-V, --version", "displays the version of cbuilder on this machine");
+    printf(LINE, "-v", "displays the version of cbuilder on this machine");
     printf(SEPERATOR);
+}
+
+void printHelpCreate()
+{
+    printf(SEPERATOR);
+    printf(HEADING, "C R E A T E");
+    printf(INFO, "By using this command, CBuilder creates the project structure with the cbuilder file,");
+    printf(INFO, "which is necessary for CBuilder to function properly. Before creating the project structure");
+    printf(INFO, "at the specified path, CBuilder is going up the directory tree to check if it is already in a CBuilder project.");
+    printf(EMPTY);
+    printf(LIST, "CBuilder will only create files and folders, it will not delete existing files or folders");
+    printf(LIST, "CBuilder will use the current working directory if no path is specified");
+    printf(LIST, "The create command can be used to check if the project structure is valid or not");
+    printf(LIST, "CBuilder will create the project at the specified path if no CBuilder project in this dirctory was found");
+    printf(SEPERATOR);
+    printf(HEADING, "A R G U M E N T S");
+    printf(LINE, "-p", "specifies a direct or indirect path");
+    printf(SEPERATOR);
+}
+
+void printInvalidCMD()
+{
+    printf(SEPERATOR);
+    printf(HEADING, "I N V A L I D  C O M M A N D");
+    printf(LINE, "For general properties", "cbuilder [ARGUMENT]");
+    printf(LINE, "For a specific command", "cbuilder [COMMAND] [ARGUMENTS]");
+    printf(SEPERATOR);
+    printf(HEADING, "H E L P");
+    printf(LINE, "cbuilder, cbuilder -h", "displays all commands and basic arguments");
+    printf(LINE, "cbuilder [COMMAND] -h", "displays specifc information and arguments about a specific command");
+    printf(SEPERATOR);
+}
+
+void printVersion()
+{
+    printf(SEPERATOR);
+    printf(HEADING, "V E R S I O N");
+    printf(LINE, "Version:", VERSION);
+    printf(SEPERATOR);
+}
+
+int setArrayToNull(void **p, int length)
+{
+    if (p == NULL)
+    {
+        printf("[ERROR] : List is Null | setArrayToNull \n");
+        return -1;
+    }
+
+    if (length == 0)
+    {
+        printf("[INFO] : List has a length of zero | setArrayToNull \n");
+    }
+
+    for (int i = 0; i < length; i++)
+    {
+        p[i] = NULL;
+    }
+
+    return 0;
+}
+
+bool isNull(void **p, int length)
+{
+    if (p == NULL)
+    {
+        printf("[ERROR] : List is Null | isNotNull \n");
+        return true;
+    }
+
+    if (length == 0)
+    {
+        printf("[ERROR] : List has a length of zero | isNotNull \n");
+        return true;
+    }
+
+    for(int i = 0; i < length; i++){
+        if(p[i] == NULL){
+            return true;
+        }
+    }
+
+    return false;
 }
