@@ -96,6 +96,7 @@ void printHelpGeneral()
     printf(SEPERATOR);
     printf(HEADING, "A R G U M E N T S");
     printf(LINE, "-v", "displays the version of cbuilder on this machine");
+    printf(LINE, "-h", "displays the general commands that cbuilder offers");
     printf(SEPERATOR);
 }
 
