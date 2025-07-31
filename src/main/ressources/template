@@ -1,0 +1,11 @@
+build {
+    prefix: gcc
+    suffix: -o cbuilder
+}
+
+debug {
+    prefix: gcc -g
+    suffix: -o cbuilder
+}
+
+
