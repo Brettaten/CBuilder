@@ -2,11 +2,11 @@
 #define HEADERGUARDOS
 
 #ifdef _WIN32
-    #define OS "win"
+    #define WIN
 #elif __unix__
-    #define OS "unix"
+    #define UNIX
 #else
-    #define OS "null"
+    #define OTHER
 #endif
 
 #endif
