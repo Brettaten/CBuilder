@@ -1,3 +1,6 @@
 *.exe
 *.bat
 .vscode
+dockerfile
+compose.yml
+.dockerignore
