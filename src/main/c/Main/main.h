@@ -27,6 +27,13 @@ void printInvalidCMD();
 void printVersion();
 
 /**
+ * Function that executes the cbuilder create -p command
+ * 
+ * @param path The path were the cbuilder project should be created
+ */
+void create(char *path);
+
+/**
  * Function used to set all elements in an array to null
  * 
  * @param **p pointer to the list

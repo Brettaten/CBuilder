@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     if (strcmp(mainCMD, "create") == 0)
     {
         int length = 1;
+        int lengthAct;
         char *params[length];
         int st1 = setArrayToNull((void **)params, length);
 
@@ -48,6 +49,7 @@ int main(int argc, char *argv[])
                     return -1;
                 }
                 params[0] = argv[i + 1];
+                lengthAct++;
             }
             else
             {
@@ -56,7 +58,12 @@ int main(int argc, char *argv[])
             }
         }
 
-        
+        if(lengthAct == 0){
+            create("*");
+        }
+        else{
+            create(params[0]);
+        }
     }
 
     else if(strcmp(mainCMD, "-h") == 0){
@@ -137,6 +144,11 @@ void printVersion()
     printf(HEADING, "V E R S I O N");
     printf(LINE, "Version:", VERSION);
     printf(SEPERATOR);
+}
+
+void create(char *path)
+{
+
 }
 
 int setArrayToNull(void **p, int length)
