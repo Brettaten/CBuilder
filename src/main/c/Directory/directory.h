@@ -55,28 +55,17 @@ char *directoryGetName(Directory *dir);
 int directoryGetEntryAmount(Directory *dir);
 
 /**
- * Function used to get a sub directory with the passed name
+ * Function used to get a entry with the passed name and type
  * 
  * @param dir The directory
  * @param name The name of the potential sub directory
+ * @param type The type of entry
  * 
- * @return Success: A pointer to an entry struct if a sub directory was found | Failure: null
- * 
- * @note The returned entry is a deep copy and thus has to be freed by the caller
- */
-Entry *directoryGetSubDir(Directory *dir, char *name);
-
-/**
- * Function used to get a file with the passed name
- * 
- * @param dir The directory
- * @param name The name of the potential file
- * 
- * @return Success: A pointer to an entry struct if a file was found | Failure: null
+ * @return Success: A pointer to an entry struct if a fitting entry was found | Failure: null
  * 
  * @note The returned entry is a deep copy and thus has to be freed by the caller
  */
-Entry *directoryGetFile(Directory *dir, char *name);
+Entry *directoryGetEntry(Directory *dir, char *name, int type);
 
 /**
  * Function used to get the parent directory of the passed directory

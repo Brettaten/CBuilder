@@ -37,12 +37,15 @@ Directory *directoryGet(char *path)
 
     char terminator = '/';
 
-    for(int i = 0; i < length; i++){
-        if(path[i] == '\\'){
+    for (int i = 0; i < length; i++)
+    {
+        if (path[i] == '\\')
+        {
             terminator = '\\';
             return;
         }
-        else if(path[i] == '/'){
+        else if (path[i] == '/')
+        {
             terminator == '/';
             return;
         }
@@ -52,10 +55,12 @@ Directory *directoryGet(char *path)
     strcpy(pathEx, path);
 
     char suffix[2];
-    if(terminator = '/'){
+    if (terminator = '/')
+    {
         strcpy(suffix, "/*");
     }
-    else{
+    else
+    {
         strcpy(suffix, "\\*");
     }
 
@@ -66,12 +71,11 @@ Directory *directoryGet(char *path)
 
     handle = FindFirstFileW(pathEx, &findFileData);
 
-    if(handle == INVALID_HANDLE_VALUE){
+    if (handle == INVALID_HANDLE_VALUE)
+    {
         printf("[ERROR] : Directory specified in the passed path could not be found | directoryGet");
         return NULL;
     }
-
-    
 }
 
 #elif UNIX
@@ -87,7 +91,8 @@ Directory *directoryGet(char *path)
 
 char *directoryGetPath(Directory *dir)
 {
-    if(dir == NULL){
+    if (dir == NULL)
+    {
         printf("[ERROR] : Directory is null | directoryGetPath");
         return NULL;
     }
@@ -97,7 +102,8 @@ char *directoryGetPath(Directory *dir)
 
 char *directoryGetName(Directory *dir)
 {
-    if(dir == NULL){
+    if (dir == NULL)
+    {
         printf("[ERROR] : Directory is null | directoryGetName");
         return NULL;
     }
@@ -107,7 +113,8 @@ char *directoryGetName(Directory *dir)
 
 int directoryGetEntryAmount(Directory *dir)
 {
-    if(dir == NULL){
+    if (dir == NULL)
+    {
         printf("[ERROR] : Directory is null | directoryGetEntryAmount");
         return -1;
     }
@@ -115,29 +122,112 @@ int directoryGetEntryAmount(Directory *dir)
     return dir->entryAmount;
 }
 
-Entry *directoryGetSubDir(Directory *dir, char *name)
+Entry *directoryGetEntry(Directory *dir, char *name, int type)
 {
-    return nullptr;
-}
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Directory is null | directoryGetSubDir");
+        return NULL;
+    }
 
-Entry *directoryGetFile(Directory *dir, char *name)
-{
-    return nullptr;
+    for (int i = 0; i < dir->entryAmount; i++)
+    {
+        if (strcmp(dir->entries[i]->name, name) && dir->entries[i]->type == type)
+        {
+
+            Entry *newEntry = (Entry *)malloc(sizeof(Entry));
+
+            if (newEntry == NULL)
+            {
+                printf("[ERROR] : Memory allocation failed | directoryGetEntry");
+                return NULL;
+            }
+
+            memcpy_s(newEntry, sizeof(Entry), dir->entries[i], sizeof(Entry));
+
+            return newEntry;
+        }
+    }
+
+    return NULL;
 }
 
 Directory *directoryGetParent(Directory *dir)
 {
-    return nullptr;
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Directory is null | directoryGetSub");
+        return NULL;
+    }
+
+    char *path = dir->path;
+    int length = strlen(path);
+    int index = 0;
+
+    for(int i = length - 1; i >= 0; i--){
+        if(path[i] == '/'){
+            index = i;
+        }
+    }
+
+    if(index == 0){
+        return NULL;
+    }
+
+    char pathParent[index + 1];
+
+    for(int i = 0; i < index + 1; i++){
+        pathParent[i] = path[i];
+    }
+
+    pathParent[index + 1] = '\0';
+
+    Directory *dir = directoryGet(pathParent);
+
+    if(dir == NULL){
+        printf("[ERROR] : Parent directory does not exist | directoryGetParent");
+        return NULL;
+    }
+
+    return dir;
 }
 
 Directory *directoryGetSub(Directory *dir, char *name)
 {
-    return nullptr;
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Directory is null | directoryGetSub");
+        return NULL;
+    }
+
+    Entry *entry = directoryGetEntry(dir, name, DIRECTORY);
+
+    if (entry == NULL)
+    {
+        printf("[ERROR] : Subdirectory with the passed name does not exist | directoryGetSub");
+        return NULL;
+    }
+
+    char *path = entry->path;
+
+    Directory *dir = directoryGet(path);
+
+    if (dir == NULL)
+    {
+        entryFree(entry);
+        printf("[ERROR] : Sub directory could not be found | directoryGetSub");
+        return NULL;
+    }
+
+    entryFree(entry);
+
+    return dir;
 }
 
 void directoryFree(Directory *dir)
 {
-    for(int i = 0; i < dir->entryAmount; i++){
+    for (int i = 0; i < dir->entryAmount; i++)
+    {
         entryFree(dir->entries[i]);
     }
     free(dir->entries);
@@ -146,7 +236,8 @@ void directoryFree(Directory *dir)
 
 char *entryGetPath(Entry *entry)
 {
-    if(entry == NULL){
+    if (entry == NULL)
+    {
         printf("[ERROR] : Entry is null | entryGetPath");
         return NULL;
     }
@@ -156,7 +247,8 @@ char *entryGetPath(Entry *entry)
 
 char *entryGetName(Entry *entry)
 {
-    if(entry == NULL){
+    if (entry == NULL)
+    {
         printf("[ERROR] : Entry is null | entryGetName");
         return NULL;
     }
@@ -166,7 +258,8 @@ char *entryGetName(Entry *entry)
 
 int entryGetType(Entry *entry)
 {
-    if(entry == NULL){
+    if (entry == NULL)
+    {
         printf("[ERROR] : Entry is null | entryGetType");
         return -1;
     }
@@ -176,7 +269,8 @@ int entryGetType(Entry *entry)
 
 time_t *entryGetLastModified(Entry *entry)
 {
-    if(entry == NULL){
+    if (entry == NULL)
+    {
         printf("[ERROR] : Entry is null | entryGetLasModified");
         return NULL;
     }
