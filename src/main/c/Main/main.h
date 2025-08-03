@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include "../Directory/directory.h"
 
 // Header guard
 #ifndef MAIN
@@ -32,6 +33,15 @@ void printVersion();
  * @param path The path were the cbuilder project should be created
  */
 void create(char *path);
+
+/**
+ * Function that checks if a CBuilder project exists in a passed directory
+ * 
+ * @param dir The directory where the CBuilder project might be located
+ * 
+ * @return true, if there is a CBuilder project and false if it is not
+ */
+bool isProject(Directory *dir);
 
 /**
  * Function used to set all elements in an array to null

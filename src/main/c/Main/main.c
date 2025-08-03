@@ -4,6 +4,7 @@
 
 #include "main.h"
 #include "../Util/display.h"
+#include "../Directory/directory.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,18 +26,21 @@ int main(int argc, char *argv[])
 
         if (st1 == -1)
         {
-            printf("[ERROR] : Function setArrayToNull failed! | main");
+            printf("[ERROR] : Function setArrayToNull failed! | main \n");
             return -1;
         }
-        
+
         for (int i = 2; i < argc; i += 2)
         {
-            if(strcmp(argv[i], "-h") == 0){
-                if(argc != 3){
+            if (strcmp(argv[i], "-h") == 0)
+            {
+                if (argc != 3)
+                {
                     printInvalidCMD();
                     return -1;
                 }
-                else{
+                else
+                {
                     printHelpCreate();
                     return 0;
                 }
@@ -44,7 +48,8 @@ int main(int argc, char *argv[])
 
             else if (strcmp(argv[i], "-p") == 0)
             {
-                if(argc <= i + 1){
+                if (argc <= i + 1)
+                {
                     printInvalidCMD();
                     return -1;
                 }
@@ -58,16 +63,20 @@ int main(int argc, char *argv[])
             }
         }
 
-        if(lengthAct == 0){
+        if (lengthAct == 0)
+        {
             create("*");
         }
-        else{
+        else
+        {
             create(params[0]);
         }
     }
 
-    else if(strcmp(mainCMD, "-h") == 0){
-        if(argv[argc - 1] != mainCMD){
+    else if (strcmp(mainCMD, "-h") == 0)
+    {
+        if (argv[argc - 1] != mainCMD)
+        {
             printInvalidCMD();
             return -1;
         }
@@ -76,8 +85,10 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    else if(strcmp(mainCMD, "-v") == 0){
-        if(argv[argc - 1] != mainCMD){
+    else if (strcmp(mainCMD, "-v") == 0)
+    {
+        if (argv[argc - 1] != mainCMD)
+        {
             printInvalidCMD();
             return -1;
         }
@@ -85,7 +96,8 @@ int main(int argc, char *argv[])
         printVersion();
         return 0;
     }
-    else{
+    else
+    {
         printInvalidCMD();
         return -1;
     }
@@ -148,7 +160,99 @@ void printVersion()
 
 void create(char *path)
 {
+    char *pathNew = path;
+    bool project = false;
 
+    Directory *dir = directoryGet(path);
+
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Wrong path passed | create \n");
+        return;
+    }
+
+    if (isProject(dir))
+    {
+        project = true;
+    }
+
+    while (!project)
+    {
+        Directory *dirParent = directoryGetParent(dir);
+
+        directoryFree(dir);
+        dir = dirParent;
+
+        if (dirParent == NULL)
+        {
+            return;
+        }
+
+        if (isProject(dirParent))
+        {
+            project = true;
+            return;
+        }
+    }
+
+    if (project)
+    {
+        printf(SEPERATOR);
+        printf(LINE, "A CBuilder projects allready exists in this directory tree at:", pathNew);
+        printf(SEPERATOR);
+        return;
+    }
+
+    directoryFree(dir);
+}
+
+bool isProject(Directory *dir)
+{
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Directory is null | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dir, "cbuilderfile", FILE) || !directoryIsEntry(dir, "bin", DIRECTORY) || !directoryIsEntry(dir, "src", DIRECTORY) || !directoryIsEntry(dir, "target", DIRECTORY))
+    {
+        return false;
+    }
+
+    Directory *dirSrc = directoryGetSub(dir, "src");
+
+    if (dirSrc == NULL)
+    {
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirSrc, "main", DIRECTORY) || !directoryIsEntry(dirSrc, "test", DIRECTORY))
+    {
+        directoryFree(dirSrc);
+        return false;
+    }
+
+    Directory *dirMain = directoryGetSub(dir, "main");
+
+    if (dirMain == NULL)
+    {
+        directoryFree(dirSrc);
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirMain, "c", DIRECTORY) || !directoryIsEntry(dirMain, "ressources", DIRECTORY))
+    {
+        directoryFree(dirSrc);
+        directoryFree(dirMain);
+        return false;
+    }
+
+    directoryFree(dirSrc);
+    directoryFree(dirMain);
+
+    return true;
 }
 
 int setArrayToNull(void **p, int length)
@@ -186,8 +290,10 @@ bool isNull(void **p, int length)
         return true;
     }
 
-    for(int i = 0; i < length; i++){
-        if(p[i] == NULL){
+    for (int i = 0; i < length; i++)
+    {
+        if (p[i] == NULL)
+        {
             return true;
         }
     }

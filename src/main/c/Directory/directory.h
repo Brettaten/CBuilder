@@ -1,5 +1,8 @@
 #ifndef HEADERGUARDDIRCTORY
 #define HEADERGUARDDIRCTORY
+
+#include <stdbool.h>
+
 /**
  * Struct used to represent a platform independent directory
  */
@@ -68,6 +71,17 @@ int directoryGetEntryAmount(Directory *dir);
 Entry *directoryGetEntry(Directory *dir, char *name, int type);
 
 /**
+ * Function used to determine whether an entry exists in a directory or not
+ * 
+ * @param dir The directory
+ * @param name The name of the potential sub directory
+ * @param type The type of entry
+ * 
+ * @return Success: true | Failure: false
+ */
+bool directoryIsEntry(Directory *dir, char *name, int type);
+
+/**
  * Function used to get the parent directory of the passed directory
  * 
  * @param dir The directory
@@ -131,14 +145,14 @@ int entryGetType(Entry *entry);
  * 
  * @return Success: The time, where the entry was last modified | Failure: null
  */
-time_t *entryGetLastModified(Entry *entry);
+time_t entryGetLastModified(Entry *entry);
 
 /**
  * Function used to free an entry
  * 
  * @param entry The entry
  */
-void *entryFree(Entry *entry);
+void entryFree(Entry *entry);
 
 #endif
 
