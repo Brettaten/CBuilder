@@ -25,59 +25,71 @@ typedef struct Entry
 /**
  * Util function to get the amount of entries in a directory so that this number can
  * be used to create an array that fits all entries
- * 
+ *
  * @param dir The directory
- * 
+ *
  * @return Success: the amount of entries in the passed dir | Failure: -1
  */
-int utilGetEntryAmount(Directory *dir);
+int utilGetEntryAmount(char *path);
 
 #ifdef WIN
 
 #include <windows.h>
+#include <direct.h>
+
+/**
+ * Util function used to convert windows file time to unix time
+ *
+ * @param ft The file time
+ *
+ * @return unix time
+ */
+time_t utilFileTimeToUnix(FILETIME ft);
+
+/**
+ * Util function used to normalize the passed path for later use
+ *
+ * @param dest the normalized path
+ * @param src The path that should be normalized
+ */
+void utilNormalizePath(char *dest, char *src);
 
 Directory *directoryGet(char *path)
 {
-    int length = strlen(path);
+    char absPath[MAX_LENGTH_PATH];
+    utilNormalizePath(absPath, path);
 
-    if (path[length - 1] == '\\' || path[length - 1] == '/')
-    {
-        path[length - 1] = '\0';
-        length--;
-    }
-
-    char terminator = '/';
-
-    for (int i = 0; i < length; i++)
-    {
-        if (path[i] == '\\')
-        {
-            terminator = '\\';
-            break;
-        }
-        else if (path[i] == '/')
-        {
-            terminator == '/';
-            break;
-        }
-    }
-
+    int length = strlen(absPath);
     char pathEx[length + 2];
-    strcpy(pathEx, path);
+    strcpy(pathEx, absPath);
 
-    char suffix[3];
-    if (terminator = '/')
+    char *suffix = "/*";
+    char dirPath[MAX_LENGTH_PATH];
+    char dirName[MAX_LENGTH_NAME];
+
+    strcat(pathEx, suffix);
+    strcpy(dirPath, absPath);
+
+    int nameLength = 0;
+
+    for (int i = strlen(absPath) - 1; i >= 0; i--)
     {
-        strcpy(suffix, "/*");
-    }
-    else
-    {
-        strcpy(suffix, "\\*");
+        if (absPath[i] != '/')
+        {
+            nameLength++;
+        }
+        else
+        {
+            break;
+        }
     }
 
-    if(strlen(pathEx) != 1 && pathEx[0] != '*'){
-        strcat(pathEx, suffix);
+    for (int i = strlen(absPath) - nameLength, j = 0; i < strlen(absPath); i++, j++)
+    {
+        dirName[j] = absPath[i];
     }
+
+    dirName[nameLength] = '\0';
 
     WIN32_FIND_DATAA findFileData;
     HANDLE handle;
@@ -90,23 +102,163 @@ Directory *directoryGet(char *path)
         return NULL;
     }
 
-    Directory *dir = (Directory *) malloc(sizeof(Directory));
+    Directory *dir = (Directory *)malloc(sizeof(Directory));
 
-    if(dir == NULL){
-        printf("[ERROR] : Memory allocation failed | create");
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Memory allocation failed | create \n");
         return NULL;
     }
 
-    while(&findFileData != NULL){
-        if(strcmp(findFileData.cFileName, ".")){
+    int entryAmount = utilGetEntryAmount(pathEx);
+    Entry **entries = (Entry **)malloc(sizeof(Entry *) * entryAmount);
 
+    dir->entryAmount = entryAmount;
+    dir->entries = entries;
+    strcpy(dir->path, dirPath);
+    strcpy(dir->name, dirName);
+
+    int counter = 0;
+
+    while (&findFileData != NULL)
+    {
+        if (strcmp(findFileData.cFileName, ".") == 0 || strcmp(findFileData.cFileName, "..") == 0)
+        {
+        }
+        else
+        {
+            Entry *entry = (Entry *)malloc(sizeof(Entry));
+
+            if (entry == NULL)
+            {
+                directoryFree(dir);
+                printf("[ERROR] : Memory allocation failed : create \n");
+                return NULL;
+            }
+
+            strcpy(entry->name, findFileData.cFileName);
+
+            char entryPath[MAX_LENGTH_PATH];
+            strcpy(entryPath, dir->path);
+            strcat(entryPath, "/");
+            strcat(entryPath, entry->name);
+            strcpy(entry->path, entryPath);
+
+            if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                entry->type = DIRECTORY;
+            }
+            else
+            {
+                entry->type = FILE;
+            }
+
+            entry->lastModified = utilFileTimeToUnix(findFileData.ftLastWriteTime);
+
+            dir->entries[counter] = entry;
+
+            counter++;
+        }
+
+        WINBOOL st1 = FindNextFileA(handle, &findFileData);
+
+        if (st1 == false)
+        {
+            break;
         }
     }
-    return NULL;
+
+    FindClose(handle);
+
+    return dir;
 }
 
-int utilGetEntryAmount(Directory *dir){
-    
+void directoryCreate(char *directoryPath, char *directoryName)
+{
+    char absPath[MAX_LENGTH_PATH];
+    utilNormalizePath(absPath, directoryPath);
+    strcat(absPath, "/");
+    strcat(absPath, directoryName);
+
+    if(!CreateDirectoryA(absPath, NULL)){
+        printf("[ERROR] : Directory %s could not be created. Maybe it already exists | directoryCreate \n", absPath);
+        return;
+    }
+}
+
+void utilNormalizePath(char *dest, char *src)
+{
+    char absPath[MAX_LENGTH_PATH];
+    _fullpath(absPath, src, sizeof(absPath));
+
+    int length = strlen(absPath);
+
+    if (absPath[length - 1] == '\\' || absPath[length - 1] == '/')
+    {
+        absPath[length - 1] = '\0';
+        length--;
+    }
+
+    char terminator = '/';
+
+    for (int i = 0; i < length; i++)
+    {
+        if (absPath[i] == '\\')
+        {
+            absPath[i] = '/';
+        }
+    }
+
+    strcpy(dest, absPath);
+}
+
+int utilGetEntryAmount(char *path)
+{
+    if (path == NULL)
+    {
+        printf("[ERROR] : Directory is null : utilGetEntryAmount");
+        return -1;
+    }
+
+    WIN32_FIND_DATAA findFileData;
+    HANDLE handle;
+
+    handle = FindFirstFileA(path, &findFileData);
+
+    if (handle == INVALID_HANDLE_VALUE)
+    {
+        printf("[ERROR] : Directory specified in the passed path could not be found | utilGetEntryAmount \n");
+        return -1;
+    }
+
+    int counter = 0;
+
+    while (&findFileData != NULL)
+    {
+        if (strcmp(findFileData.cFileName, ".") != 0 && strcmp(findFileData.cFileName, "..") != 0)
+        {
+            counter++;
+        }
+
+        WINBOOL st1 = FindNextFileA(handle, &findFileData);
+
+        if (st1 == false)
+        {
+            break;
+        }
+    }
+    return counter;
+}
+
+time_t utilFileTimeToUnix(FILETIME ft)
+{
+    ULARGE_INTEGER ull;
+    ull.LowPart = ft.dwLowDateTime;
+    ull.HighPart = ft.dwHighDateTime;
+
+    ull.QuadPart -= 116444736000000000ULL;
+
+    return (time_t)(ull.QuadPart / 10000000ULL);
 }
 
 #elif UNIX
@@ -163,7 +315,7 @@ Entry *directoryGetEntry(Directory *dir, char *name, int type)
 
     for (int i = 0; i < dir->entryAmount; i++)
     {
-        if (strcmp(dir->entries[i]->name, name) && dir->entries[i]->type == type)
+        if (strcmp(dir->entries[i]->name, name) == 0 && dir->entries[i]->type == type)
         {
 
             Entry *newEntry = (Entry *)malloc(sizeof(Entry));
@@ -193,7 +345,7 @@ bool directoryIsEntry(Directory *dir, char *name, int type)
 
     for (int i = 0; i < dir->entryAmount; i++)
     {
-        if (strcmp(dir->entries[i]->name, name) && dir->entries[i]->type == type)
+        if (strcmp(dir->entries[i]->name, name) == 0 && dir->entries[i]->type == type)
         {
             return true;
         }
@@ -219,6 +371,7 @@ Directory *directoryGetParent(Directory *dir)
         if (path[i] == '/')
         {
             index = i;
+            break;
         }
     }
 
@@ -327,7 +480,7 @@ time_t entryGetLastModified(Entry *entry)
     if (entry == NULL)
     {
         printf("[ERROR] : Entry is null | entryGetLasModified \n");
-        return (time_t) -1;
+        return (time_t)-1;
     }
 
     return entry->lastModified;

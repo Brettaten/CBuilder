@@ -31,6 +31,15 @@ typedef struct Entry Entry;
 Directory *directoryGet(char *path);
 
 /**
+ * Function used to create a directory at the specified path
+ * 
+ * @param directoryPath the parent directory of the new directory
+ * @param directoryName the name of the new directory
+ * 
+ */
+void directoryCreate(char *directoryPath, char *directoryName);
+
+/**
  * Function used to get the path of a directory 
  * 
  * @param dir The directory

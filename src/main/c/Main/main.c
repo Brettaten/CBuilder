@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
         if (lengthAct == 0)
         {
-            create("*");
+            create(".");
         }
         else
         {
@@ -160,7 +160,7 @@ void printVersion()
 
 void create(char *path)
 {
-    char *pathNew = path;
+    char projectPath[MAX_LENGTH_PATH];
     bool project = false;
 
     Directory *dir = directoryGet(path);
@@ -173,6 +173,7 @@ void create(char *path)
 
     if (isProject(dir))
     {
+        strcpy(projectPath, directoryGetPath(dir));
         project = true;
     }
 
@@ -185,22 +186,43 @@ void create(char *path)
 
         if (dirParent == NULL)
         {
-            return;
+            break;
         }
 
         if (isProject(dirParent))
         {
             project = true;
-            return;
+            strcpy(projectPath, directoryGetPath(dirParent));
+            break;
         }
     }
 
     if (project)
     {
         printf(SEPERATOR);
-        printf(LINE, "A CBuilder projects allready exists in this directory tree at:", pathNew);
+        printf(LINE, "A CBuilder projects exists at:", projectPath);
         printf(SEPERATOR);
         return;
+    }
+    else
+    {
+        directoryCreate(path, "bin");
+        directoryCreate(path, "src");
+        directoryCreate(path, "target");
+
+        char pathSrc[MAX_LENGTH_PATH];
+        strcpy(pathSrc, path);
+        strcat(pathSrc, "/src");
+
+        directoryCreate(pathSrc, "main");
+        directoryCreate(pathSrc, "test");
+
+        char pathMain[MAX_LENGTH_PATH];
+        strcpy(pathMain, pathSrc);
+        strcat(pathMain, "/main");
+        
+        directoryCreate(pathMain, "c");
+        directoryCreate(pathMain, "ressources");
     }
 
     directoryFree(dir);
@@ -233,7 +255,7 @@ bool isProject(Directory *dir)
         return false;
     }
 
-    Directory *dirMain = directoryGetSub(dir, "main");
+    Directory *dirMain = directoryGetSub(dirSrc, "main");
 
     if (dirMain == NULL)
     {
