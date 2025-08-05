@@ -164,6 +164,7 @@ void create(char *path)
     bool project = false;
 
     Directory *dir = directoryGet(path);
+    strcpy(projectPath, directoryGetPath(dir));
 
     if (dir == NULL)
     {
@@ -200,29 +201,43 @@ void create(char *path)
     if (project)
     {
         printf(SEPERATOR);
-        printf(LINE, "A CBuilder projects exists at:", projectPath);
+        printf(HEADING, "I N F O");
+        printf(LINE, "A CBuilder project exists at:", projectPath);
         printf(SEPERATOR);
         return;
     }
     else
     {
-        directoryCreate(path, "bin");
-        directoryCreate(path, "src");
-        directoryCreate(path, "target");
+        if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile") || !fileCopy(path, "cbuilderfile", ))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create");
+            return;
+        }
 
         char pathSrc[MAX_LENGTH_PATH];
         strcpy(pathSrc, path);
         strcat(pathSrc, "/src");
 
-        directoryCreate(pathSrc, "main");
-        directoryCreate(pathSrc, "test");
+        if (!directoryCreate(pathSrc, "main") || !directoryCreate(pathSrc, "test"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create");
+            return;
+        }
 
         char pathMain[MAX_LENGTH_PATH];
         strcpy(pathMain, pathSrc);
         strcat(pathMain, "/main");
-        
-        directoryCreate(pathMain, "c");
-        directoryCreate(pathMain, "ressources");
+
+        if (!directoryCreate(pathMain, "c") || !directoryCreate(pathMain, "ressources"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create");
+            return;
+        }
+
+        printf(SEPERATOR);
+        printf(HEADING, "S U C E S S S");
+        printf(LINE, "CBuilder project created at:", projectPath);
+        printf(SEPERATOR);
     }
 
     directoryFree(dir);
@@ -236,7 +251,7 @@ bool isProject(Directory *dir)
         return false;
     }
 
-    if (!directoryIsEntry(dir, "cbuilderfile", FILE) || !directoryIsEntry(dir, "bin", DIRECTORY) || !directoryIsEntry(dir, "src", DIRECTORY) || !directoryIsEntry(dir, "target", DIRECTORY))
+    if (!directoryIsEntry(dir, "cbuilderfile", TYPE_FILE) || !directoryIsEntry(dir, "bin", TYPE_DIRECTORY) || !directoryIsEntry(dir, "src", TYPE_DIRECTORY) || !directoryIsEntry(dir, "target", TYPE_DIRECTORY))
     {
         return false;
     }
@@ -249,7 +264,7 @@ bool isProject(Directory *dir)
         return false;
     }
 
-    if (!directoryIsEntry(dirSrc, "main", DIRECTORY) || !directoryIsEntry(dirSrc, "test", DIRECTORY))
+    if (!directoryIsEntry(dirSrc, "main", TYPE_DIRECTORY) || !directoryIsEntry(dirSrc, "test", TYPE_DIRECTORY))
     {
         directoryFree(dirSrc);
         return false;
@@ -264,7 +279,7 @@ bool isProject(Directory *dir)
         return false;
     }
 
-    if (!directoryIsEntry(dirMain, "c", DIRECTORY) || !directoryIsEntry(dirMain, "ressources", DIRECTORY))
+    if (!directoryIsEntry(dirMain, "c", TYPE_DIRECTORY) || !directoryIsEntry(dirMain, "ressources", TYPE_DIRECTORY))
     {
         directoryFree(dirSrc);
         directoryFree(dirMain);

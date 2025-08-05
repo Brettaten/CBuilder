@@ -13,8 +13,8 @@ typedef struct Directory Directory;
  */
 typedef struct Entry Entry;
 
-#define FILE 1
-#define DIRECTORY 2
+#define TYPE_FILE 1
+#define TYPE_DIRECTORY 2
 
 #define MAX_LENGTH_NAME 512
 #define MAX_LENGTH_PATH 4096
@@ -36,8 +36,10 @@ Directory *directoryGet(char *path);
  * @param directoryPath the parent directory of the new directory
  * @param directoryName the name of the new directory
  * 
+ * @return Success: true | Failure: false
+ * 
  */
-void directoryCreate(char *directoryPath, char *directoryName);
+bool directoryCreate(char *directoryPath, char *directoryName);
 
 /**
  * Function used to get the path of a directory 
@@ -162,6 +164,28 @@ time_t entryGetLastModified(Entry *entry);
  * @param entry The entry
  */
 void entryFree(Entry *entry);
+
+/**
+ * Function used to create a file
+ * 
+ * @param path The directory of the file
+ * @param fileName The name of the new file
+ * 
+ * @return Success: true | Failure: false
+ */
+bool fileCreate(char *path, char *fileName);
+
+/**
+ * Function used to copy one file to another
+ * 
+ * @param destPath The path to the destination file
+ * @param destName The name of the destination file
+ * @param srcPath The path to the source file
+ * @param srcName The name of the source file
+ * 
+ * @return Success: true | Failure: false
+ */
+bool fileCopy(char *destPath, char *destName, char *srcPath, char *srcName);
 
 #endif
 

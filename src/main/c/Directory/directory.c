@@ -146,11 +146,11 @@ Directory *directoryGet(char *path)
 
             if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
-                entry->type = DIRECTORY;
+                entry->type = TYPE_DIRECTORY;
             }
             else
             {
-                entry->type = FILE;
+                entry->type = TYPE_FILE;
             }
 
             entry->lastModified = utilFileTimeToUnix(findFileData.ftLastWriteTime);
@@ -173,17 +173,23 @@ Directory *directoryGet(char *path)
     return dir;
 }
 
-void directoryCreate(char *directoryPath, char *directoryName)
+bool directoryCreate(char *directoryPath, char *directoryName)
 {
     char absPath[MAX_LENGTH_PATH];
     utilNormalizePath(absPath, directoryPath);
     strcat(absPath, "/");
     strcat(absPath, directoryName);
 
-    if(!CreateDirectoryA(absPath, NULL)){
-        printf("[ERROR] : Directory %s could not be created. Maybe it already exists | directoryCreate \n", absPath);
-        return;
+    if (!CreateDirectoryA(absPath, NULL))
+    {
+        DWORD err = GetLastError();
+        if (err != ERROR_ALREADY_EXISTS)
+        {
+            printf("[ERROR] : Directory %s could not be created | directoryCreate \n", absPath);
+            return false;
+        }
     }
+    return true;
 }
 
 void utilNormalizePath(char *dest, char *src)
@@ -408,7 +414,7 @@ Directory *directoryGetSub(Directory *dir, char *name)
         return NULL;
     }
 
-    Entry *entry = directoryGetEntry(dir, name, DIRECTORY);
+    Entry *entry = directoryGetEntry(dir, name, TYPE_DIRECTORY);
 
     if (entry == NULL)
     {
@@ -489,4 +495,54 @@ time_t entryGetLastModified(Entry *entry)
 void entryFree(Entry *entry)
 {
     free(entry);
+}
+
+bool fileCreate(char *path, char *fileName)
+{
+    char absPath[MAX_LENGTH_NAME];
+    utilNormalizePath(absPath, path);
+    strcat(absPath, "/");
+    strcat(absPath, fileName);
+
+    FILE *file = fopen(absPath, "w");
+
+    if (file == NULL)
+    {
+        printf("[ERROR] : File %s could not be created | fileCreate \n", absPath);
+        return false;
+    }
+
+    fclose(file);
+    return true;
+}
+
+bool fileCopy(char *destPath, char *destName, char *srcPath, char *srcName)
+{
+    char absPathDest[MAX_LENGTH_NAME];
+    utilNormalizePath(absPathDest, destPath);
+    strcat(absPathDest, "/");
+    strcat(absPathDest, destName);
+
+    char absPathSrc[MAX_LENGTH_NAME];
+    utilNormalizePath(absPathSrc, srcPath);
+    strcat(absPathSrc, "/");
+    strcat(absPathSrc, srcName);
+
+    FILE *dest = fopen(absPathDest, "w");
+    FILE *src = fopen(absPathSrc, "r");
+
+    if (dest == NULL || src == NULL)
+    {
+        printf("[ERROR] : File %s could not be copied to %s| fileCopy \n", absPathSrc, absPathDest);
+        return false;
+    }
+
+    char c;
+
+    while((c = getc(src)) != '\0'){
+        putc(c, dest);
+    }
+
+    fclose(dest);
+    fclose(src);
 }
