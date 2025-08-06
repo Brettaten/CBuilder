@@ -1,5 +1,6 @@
 *.exe
 *.bat
+*.sh
 .vscode
 .VSCodeCounter
 dockerfile
