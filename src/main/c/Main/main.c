@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
     if (strcmp(mainCMD, "create") == 0)
     {
         int length = 1;
-        int lengthAct;
+        int lengthAct = 0;
         char *params[length];
         int st1 = setArrayToNull((void **)params, length);
 
@@ -194,6 +194,7 @@ void create(char *path)
         {
             project = true;
             strcpy(projectPath, directoryGetPath(dirParent));
+            directoryFree(dir);
             break;
         }
     }
@@ -208,9 +209,9 @@ void create(char *path)
     }
     else
     {
-        if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile") || !fileCopy(path, "cbuilderfile", ))
+        if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile"))
         {
-            printf("[ERROR] : Something went wrong during project creation | create");
+            printf("[ERROR] : Something went wrong during project creation | create \n");
             return;
         }
 
@@ -220,7 +221,7 @@ void create(char *path)
 
         if (!directoryCreate(pathSrc, "main") || !directoryCreate(pathSrc, "test"))
         {
-            printf("[ERROR] : Something went wrong during project creation | create");
+            printf("[ERROR] : Something went wrong during project creation | create \n");
             return;
         }
 
@@ -230,7 +231,7 @@ void create(char *path)
 
         if (!directoryCreate(pathMain, "c") || !directoryCreate(pathMain, "ressources"))
         {
-            printf("[ERROR] : Something went wrong during project creation | create");
+            printf("[ERROR] : Something went wrong during project creation | create \n");
             return;
         }
 
@@ -239,8 +240,6 @@ void create(char *path)
         printf(LINE, "CBuilder project created at:", projectPath);
         printf(SEPERATOR);
     }
-
-    directoryFree(dir);
 }
 
 bool isProject(Directory *dir)

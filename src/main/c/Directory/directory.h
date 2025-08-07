@@ -2,6 +2,7 @@
 #define HEADERGUARDDIRCTORY
 
 #include <stdbool.h>
+#include <time.h>
 
 /**
  * Struct used to represent a platform independent directory

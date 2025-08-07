@@ -1,6 +1,9 @@
+#define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 700
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 
 #include "directory.h"
 #include "../Util/os.h"
@@ -32,6 +35,14 @@ typedef struct Entry
  */
 int utilGetEntryAmount(char *path);
 
+/**
+ * Util function used to normalize the passed path for later use
+ *
+ * @param dest the normalized path
+ * @param src The path that should be normalized
+ */
+void utilNormalizePath(char *dest, char *src);
+
 #ifdef WIN
 
 #include <windows.h>
@@ -45,14 +56,6 @@ int utilGetEntryAmount(char *path);
  * @return unix time
  */
 time_t utilFileTimeToUnix(FILETIME ft);
-
-/**
- * Util function used to normalize the passed path for later use
- *
- * @param dest the normalized path
- * @param src The path that should be normalized
- */
-void utilNormalizePath(char *dest, char *src);
 
 Directory *directoryGet(char *path)
 {
@@ -131,6 +134,7 @@ Directory *directoryGet(char *path)
 
             if (entry == NULL)
             {
+                dir->entryAmount = counter;
                 directoryFree(dir);
                 printf("[ERROR] : Memory allocation failed : create \n");
                 return NULL;
@@ -253,6 +257,7 @@ int utilGetEntryAmount(char *path)
             break;
         }
     }
+    FindClose(handle);
     return counter;
 }
 
@@ -267,13 +272,196 @@ time_t utilFileTimeToUnix(FILETIME ft)
     return (time_t)(ull.QuadPart / 10000000ULL);
 }
 
-#elif UNIX
+#elif defined(UNIX)
 
-#include "dirent.h"
+#include <dirent.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 Directory *directoryGet(char *path)
 {
-    DIR
+    char absPath[MAX_LENGTH_PATH];
+    utilNormalizePath(absPath, path);
+
+    char dirPath[MAX_LENGTH_PATH];
+    char dirName[MAX_LENGTH_NAME];
+
+    strcpy(dirPath, absPath);
+
+    int nameLength = 0;
+
+    for (int i = strlen(absPath) - 1; i >= 0; i--)
+    {
+        if (absPath[i] != '/')
+        {
+            nameLength++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    for (int i = strlen(absPath) - nameLength, j = 0; i < strlen(absPath); i++, j++)
+    {
+        dirName[j] = absPath[i];
+    }
+
+    dirName[nameLength] = '\0';
+
+    DIR *dirUnix = opendir(absPath);
+
+    if (dirUnix == NULL)
+    {
+        printf("[ERROR] : Directory specified in the passed path could not be found | directoryGet \n");
+        return NULL;
+    }
+
+    Directory *dir = (Directory *)malloc(sizeof(Directory));
+
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Memory allocation failed | create \n");
+        return NULL;
+    }
+
+    int entryAmount = utilGetEntryAmount(absPath);
+    Entry **entries = (Entry **)malloc(sizeof(Entry *) * entryAmount);
+
+    dir->entryAmount = entryAmount;
+    dir->entries = entries;
+    strcpy(dir->path, dirPath);
+    strcpy(dir->name, dirName);
+
+    struct dirent *dirent;
+    int counter = 0;
+
+    while ((dirent = readdir(dirUnix)) != NULL)
+    {
+        if (strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0)
+        {
+        }
+        else
+        {
+            Entry *entry = (Entry *)malloc(sizeof(Entry));
+
+            if (entry == NULL)
+            {
+                dir->entryAmount = counter;
+                directoryFree(dir);
+                printf("[ERROR] : Memory allocation failed : create \n");
+                return NULL;
+            }
+
+            strcpy(entry->name, dirent->d_name);
+
+            char entryPath[MAX_LENGTH_PATH];
+            strcpy(entryPath, dir->path);
+            strcat(entryPath, "/");
+            strcat(entryPath, entry->name);
+            strcpy(entry->path, entryPath);
+
+            struct stat statbuf;
+            if (stat(entry->path, &statbuf) != 0)
+            {
+                dir->entryAmount = counter;
+                directoryFree(dir);
+                printf("[ERROR] : Can not access stats for entry at path %s | directoryGet", entry->path);
+                return NULL;
+            }
+
+            if (S_ISDIR(statbuf.st_mode))
+            {
+                entry->type = TYPE_DIRECTORY;
+            }
+            else
+            {
+                entry->type = TYPE_FILE;
+            }
+
+            entry->lastModified = statbuf.st_mtime;
+
+            dir->entries[counter] = entry;
+
+            counter++;
+        }
+    }
+
+    closedir(dirUnix);
+
+    return dir;
+}
+
+bool directoryCreate(char *directoryPath, char *directoryName)
+{
+    char absPath[MAX_LENGTH_PATH];
+    utilNormalizePath(absPath, directoryPath);
+    strcat(absPath, "/");
+    strcat(absPath, directoryName);
+
+    if (mkdir(absPath, 0777) != 0 && errno != EEXIST)
+    {
+        printf("[ERROR] : Directory %s could not be created | directoryCreate \n", absPath);
+        return false;
+    }
+
+    return true;
+}
+
+void utilNormalizePath(char *dest, char *src)
+{
+    char absPath[MAX_LENGTH_PATH];
+    realpath(src, absPath);
+
+    int length = strlen(absPath);
+
+    if (absPath[length - 1] == '\\' || absPath[length - 1] == '/')
+    {
+        absPath[length - 1] = '\0';
+        length--;
+    }
+
+    char terminator = '/';
+
+    for (int i = 0; i < length; i++)
+    {
+        if (absPath[i] == '\\')
+        {
+            absPath[i] = '/';
+        }
+    }
+
+    strcpy(dest, absPath);
+}
+
+int utilGetEntryAmount(char *path)
+{
+    if (path == NULL)
+    {
+        printf("[ERROR] : Directory is null : utilGetEntryAmount");
+        return -1;
+    }
+
+    DIR *dir = opendir(path);
+
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Directory specified in the passed path could not be found | utilGetEntryAmount \n");
+        return -1;
+    }
+
+    struct dirent *dirent;
+    int counter = 0;
+
+    while ((dirent = readdir(dir)) != NULL)
+    {
+        if (strcmp(dirent->d_name, ".") != 0 && strcmp(dirent->d_name, "..") != 0)
+        {
+            counter++;
+        }
+    }
+    closedir(dir);
+    return counter;
 }
 
 #endif
@@ -332,7 +520,7 @@ Entry *directoryGetEntry(Directory *dir, char *name, int type)
                 return NULL;
             }
 
-            memcpy_s(newEntry, sizeof(Entry), dir->entries[i], sizeof(Entry));
+            memcpy(newEntry, dir->entries[i], sizeof(Entry));
 
             return newEntry;
         }
@@ -537,12 +725,15 @@ bool fileCopy(char *destPath, char *destName, char *srcPath, char *srcName)
         return false;
     }
 
-    char c;
+    int c; 
 
-    while((c = getc(src)) != '\0'){
+    while ((c = getc(src)) != EOF)
+    {
         putc(c, dest);
     }
 
     fclose(dest);
     fclose(src);
+
+    return true;
 }
