@@ -163,83 +163,77 @@ void create(char *path)
     char projectPath[MAX_LENGTH_PATH];
     bool project = false;
 
-    Directory *dir = directoryGet(path);
-    strcpy(projectPath, directoryGetPath(dir));
+    int st1 = findProject(path, projectPath);
 
-    if (dir == NULL)
+    if (st1 == -1)
     {
-        printf("[ERROR] : Wrong path passed | create \n");
-        return;
-    }
-
-    if (isProject(dir))
-    {
-        strcpy(projectPath, directoryGetPath(dir));
-        project = true;
-    }
-
-    while (!project)
-    {
-        Directory *dirParent = directoryGetParent(dir);
-
-        directoryFree(dir);
-        dir = dirParent;
-
-        if (dirParent == NULL)
-        {
-            break;
-        }
-
-        if (isProject(dirParent))
-        {
-            project = true;
-            strcpy(projectPath, directoryGetPath(dirParent));
-            directoryFree(dir);
-            break;
-        }
-    }
-
-    if (project)
-    {
-        printf(SEPERATOR);
-        printf(HEADING, "I N F O");
-        printf(LINE, "A CBuilder project exists at:", projectPath);
-        printf(SEPERATOR);
-        return;
+        directoryNormalizePath(projectPath, path);
+        project = false;
     }
     else
     {
-        if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile"))
-        {
-            printf("[ERROR] : Something went wrong during project creation | create \n");
-            return;
-        }
-
-        char pathSrc[MAX_LENGTH_PATH];
-        strcpy(pathSrc, path);
-        strcat(pathSrc, "/src");
-
-        if (!directoryCreate(pathSrc, "main") || !directoryCreate(pathSrc, "test"))
-        {
-            printf("[ERROR] : Something went wrong during project creation | create \n");
-            return;
-        }
-
-        char pathMain[MAX_LENGTH_PATH];
-        strcpy(pathMain, pathSrc);
-        strcat(pathMain, "/main");
-
-        if (!directoryCreate(pathMain, "c") || !directoryCreate(pathMain, "ressources"))
-        {
-            printf("[ERROR] : Something went wrong during project creation | create \n");
-            return;
-        }
-
-        printf(SEPERATOR);
-        printf(HEADING, "S U C E S S S");
-        printf(LINE, "CBuilder project created at:", projectPath);
-        printf(SEPERATOR);
+        project = true;
     }
+
+    if (projectPath)
+
+        if (project)
+        {
+            printf(SEPERATOR);
+            printf(HEADING, "I N F O");
+            printf(LINE, "A CBuilder project exists at:", projectPath);
+            printf(SEPERATOR);
+            return;
+        }
+        else
+        {
+            Directory *ressource = getRessourceDirectory();
+
+            if(ressource == NULL){
+                printf("[ERROR] : Ressource directory was not found | create");
+                return;
+            }
+
+            Entry *template = directoryGetEntry(ressource, "cbuilderfile", TYPE_FILE);
+
+            if(template == NULL){
+                printf("[ERROR] : CBuilderfile template was not found | create");
+            }
+
+            if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile") || !fileCopy(path, "cbuilderfile", directoryGetPath(ressource), entryGetName(template)))
+            {
+                printf("[ERROR] : Something went wrong during project creation | create \n");
+                return;
+            }
+
+            char pathSrc[MAX_LENGTH_PATH];
+            strcpy(pathSrc, path);
+            strcat(pathSrc, "/src");
+
+            if (!directoryCreate(pathSrc, "main") || !directoryCreate(pathSrc, "test"))
+            {
+                printf("[ERROR] : Something went wrong during project creation | create \n");
+                return;
+            }
+
+            char pathMain[MAX_LENGTH_PATH];
+            strcpy(pathMain, pathSrc);
+            strcat(pathMain, "/main");
+
+            if (!directoryCreate(pathMain, "c") || !directoryCreate(pathMain, "ressources"))
+            {
+                printf("[ERROR] : Something went wrong during project creation | create \n");
+                return;
+            }
+
+            printf(SEPERATOR);
+            printf(HEADING, "S U C E S S S");
+            printf(LINE, "CBuilder project created at:", projectPath);
+            printf(SEPERATOR);
+
+            directoryFree(ressource);
+            entryFree(template);
+        }
 }
 
 bool isProject(Directory *dir)
@@ -289,6 +283,103 @@ bool isProject(Directory *dir)
     directoryFree(dirMain);
 
     return true;
+}
+
+int findProject(char *path, char *dest)
+{
+    char projectPath[MAX_LENGTH_PATH];
+    bool project = false;
+
+    Directory *dir = directoryGet(path);
+
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Wrong path passed | findProject \n");
+        dest = NULL;
+        return -1;
+    }
+
+    strcpy(projectPath, directoryGetPath(dir));
+
+    if (isProject(dir))
+    {
+        strcpy(projectPath, directoryGetPath(dir));
+        project = true;
+        directoryFree(dir);
+    }
+
+    while (!project)
+    {
+        Directory *dirParent = directoryGetParent(dir);
+
+        directoryFree(dir);
+        dir = dirParent;
+
+        if (dirParent == NULL)
+        {
+            break;
+        }
+
+        if (isProject(dirParent))
+        {
+            project = true;
+            strcpy(projectPath, directoryGetPath(dirParent));
+            directoryFree(dir);
+            break;
+        }
+    }
+
+    if (project)
+    {
+        strcpy(dest, projectPath);
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+Directory *getRessourceDirectory()
+{
+    char pathExe[MAX_LENGTH_PATH];
+
+    int st1 = directoryGetExecutablePath(pathExe);
+
+    if (st1 == -1)
+    {
+        printf("[ERROR] : Executable path could not be found | getRessourceDirectory \n");
+        return NULL;
+    }
+
+    char pathPro[MAX_LENGTH_PATH];
+
+    for(int i = strlen(pathExe) - 1; i >= 0; i--){
+        if(pathExe[i] == '/'){
+            pathExe[i] = '\0';
+            break;
+        }
+    }
+
+    int st2 = findProject(pathExe, pathPro);
+
+    if (st2 == -1)
+    {
+        printf("[ERROR] : CBuilder project could not be found | getRessourceDirectory \n");
+        return NULL;
+    }
+
+    strcat(pathPro, "/src/main/ressources");
+
+    Directory *dir = directoryGet(pathPro);
+
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Directory could not be found | getRessourceDirectory \n");
+        return NULL;
+    }
+    
+    return dir;
 }
 
 int setArrayToNull(void **p, int length)

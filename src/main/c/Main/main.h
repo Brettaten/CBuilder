@@ -44,6 +44,23 @@ void create(char *path);
 bool isProject(Directory *dir);
 
 /**
+ * Function used to find the path of a cbuilder project
+ * 
+ * @param path The initial path
+ * @param dest The project path
+ * 
+ * @return Success: 0 | Failure: -1
+ */
+int findProject(char *path, char *dest);
+
+/**
+ * Function used to get the ressource directory of this cbuilder project
+ * 
+ * @return Success: The directory | Failure: NULL
+ */
+Directory *getRessourceDirectory();
+
+/**
  * Function used to set all elements in an array to null
  * 
  * @param **p pointer to the list

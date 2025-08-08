@@ -3,8 +3,10 @@
 
 #ifdef _WIN32
     #define WIN
-#elif defined(__unix__)
-    #define UNIX
+#elif defined(__linux__)
+    #define LINUX
+#elif defined(__APPLE__)
+    #define APPLE
 #else
     #define OTHER
 #endif

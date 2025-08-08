@@ -35,14 +35,6 @@ typedef struct Entry
  */
 int utilGetEntryAmount(char *path);
 
-/**
- * Util function used to normalize the passed path for later use
- *
- * @param dest the normalized path
- * @param src The path that should be normalized
- */
-void utilNormalizePath(char *dest, char *src);
-
 #ifdef WIN
 
 #include <windows.h>
@@ -60,7 +52,7 @@ time_t utilFileTimeToUnix(FILETIME ft);
 Directory *directoryGet(char *path)
 {
     char absPath[MAX_LENGTH_PATH];
-    utilNormalizePath(absPath, path);
+    directoryNormalizePath(absPath, path);
 
     int length = strlen(absPath);
     char pathEx[length + 2];
@@ -180,7 +172,7 @@ Directory *directoryGet(char *path)
 bool directoryCreate(char *directoryPath, char *directoryName)
 {
     char absPath[MAX_LENGTH_PATH];
-    utilNormalizePath(absPath, directoryPath);
+    directoryNormalizePath(absPath, directoryPath);
     strcat(absPath, "/");
     strcat(absPath, directoryName);
 
@@ -196,7 +188,20 @@ bool directoryCreate(char *directoryPath, char *directoryName)
     return true;
 }
 
-void utilNormalizePath(char *dest, char *src)
+int directoryGetExecutablePath(char *dest){
+    char path[MAX_LENGTH_PATH];
+    DWORD len = GetModuleFileNameA(NULL, path, MAX_LENGTH_PATH);
+    if (len == 0) {
+        printf("[ERROR] : Executable path could not be determined | directoryGetProjectPath \n");
+        return -1;
+    } 
+    char pathNorm[MAX_LENGTH_PATH];
+    directoryNormalizePath(pathNorm, path);
+    strcpy(dest, pathNorm);
+    return 0;
+}
+
+void directoryNormalizePath(char *dest, char *src)
 {
     char absPath[MAX_LENGTH_PATH];
     _fullpath(absPath, src, sizeof(absPath));
@@ -272,7 +277,7 @@ time_t utilFileTimeToUnix(FILETIME ft)
     return (time_t)(ull.QuadPart / 10000000ULL);
 }
 
-#elif defined(UNIX)
+#elif defined(LINUX)
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -281,7 +286,7 @@ time_t utilFileTimeToUnix(FILETIME ft)
 Directory *directoryGet(char *path)
 {
     char absPath[MAX_LENGTH_PATH];
-    utilNormalizePath(absPath, path);
+    directoryNormalizePath(absPath, path);
 
     char dirPath[MAX_LENGTH_PATH];
     char dirName[MAX_LENGTH_NAME];
@@ -395,7 +400,7 @@ Directory *directoryGet(char *path)
 bool directoryCreate(char *directoryPath, char *directoryName)
 {
     char absPath[MAX_LENGTH_PATH];
-    utilNormalizePath(absPath, directoryPath);
+    directoryNormalizePath(absPath, directoryPath);
     strcat(absPath, "/");
     strcat(absPath, directoryName);
 
@@ -408,7 +413,18 @@ bool directoryCreate(char *directoryPath, char *directoryName)
     return true;
 }
 
-void utilNormalizePath(char *dest, char *src)
+char *directoryGetExecutablePath(){
+    char path[MAX_LENGTH_PATH];
+    DWORD len = GetModuleFileNameA(NULL, path, MAX_LENGTH_PATH);
+    if (len == 0) {
+        printf("[ERROR] : Executable path could not be determined | directoryGetProjectPath \n");
+        return NULL;
+    } 
+
+    return path;
+}
+
+void directoryNormalizePath(char *dest, char *src)
 {
     char absPath[MAX_LENGTH_PATH];
     realpath(src, absPath);
@@ -463,6 +479,8 @@ int utilGetEntryAmount(char *path)
     closedir(dir);
     return counter;
 }
+
+#elif defined(APPLE)
 
 #endif
 
@@ -688,7 +706,7 @@ void entryFree(Entry *entry)
 bool fileCreate(char *path, char *fileName)
 {
     char absPath[MAX_LENGTH_NAME];
-    utilNormalizePath(absPath, path);
+    directoryNormalizePath(absPath, path);
     strcat(absPath, "/");
     strcat(absPath, fileName);
 
@@ -707,12 +725,12 @@ bool fileCreate(char *path, char *fileName)
 bool fileCopy(char *destPath, char *destName, char *srcPath, char *srcName)
 {
     char absPathDest[MAX_LENGTH_NAME];
-    utilNormalizePath(absPathDest, destPath);
+    directoryNormalizePath(absPathDest, destPath);
     strcat(absPathDest, "/");
     strcat(absPathDest, destName);
 
     char absPathSrc[MAX_LENGTH_NAME];
-    utilNormalizePath(absPathSrc, srcPath);
+    directoryNormalizePath(absPathSrc, srcPath);
     strcat(absPathSrc, "/");
     strcat(absPathSrc, srcName);
 

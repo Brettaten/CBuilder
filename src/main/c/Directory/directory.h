@@ -43,6 +43,23 @@ Directory *directoryGet(char *path);
 bool directoryCreate(char *directoryPath, char *directoryName);
 
 /**
+ * Function used to get the executable path
+ * 
+ * @param dest The path to the executable path
+ * 
+ * @return Success: 0 | Failure: -1
+ */
+int directoryGetExecutablePath(char *dest);
+
+/**
+ * Function used to normalize the passed path for later use
+ *
+ * @param dest the normalized path
+ * @param src The path that should be normalized
+ */
+void directoryNormalizePath(char *dest, char *src);
+
+/**
  * Function used to get the path of a directory 
  * 
  * @param dir The directory
