@@ -413,15 +413,17 @@ bool directoryCreate(char *directoryPath, char *directoryName)
     return true;
 }
 
-char *directoryGetExecutablePath(){
+int directoryGetExecutablePath(char *dest){
     char path[MAX_LENGTH_PATH];
-    DWORD len = GetModuleFileNameA(NULL, path, MAX_LENGTH_PATH);
-    if (len == 0) {
+    ssize_t len = readlink("/proc/self/exe", path, sizeof(path)-1);
+    if (len == -1) {
         printf("[ERROR] : Executable path could not be determined | directoryGetProjectPath \n");
-        return NULL;
+        return -1;
     } 
-
-    return path;
+    char pathNorm[MAX_LENGTH_PATH];
+    directoryNormalizePath(pathNorm, path);
+    strcpy(dest, pathNorm);
+    return 0;
 }
 
 void directoryNormalizePath(char *dest, char *src)
