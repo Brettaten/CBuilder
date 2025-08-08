@@ -282,6 +282,7 @@ time_t utilFileTimeToUnix(FILETIME ft)
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <unistd.h>
 
 Directory *directoryGet(char *path)
 {
