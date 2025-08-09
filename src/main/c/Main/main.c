@@ -1,10 +1,23 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include "main.h"
 #include "../Util/display.h"
+#include "../Util/List/list.h"
 #include "../Directory/directory.h"
+
+/**
+ * Functionn that checks if a character c is in the passed array 
+ * 
+ * @param arr The array
+ * @param length The length of the array
+ * @param c The character
+ * 
+ * @return true if c is in arr, false if c is not in arr
+ */
+bool utilIsInArray(char *arr, int length, int c);
 
 int main(int argc, char *argv[])
 {
@@ -71,6 +84,10 @@ int main(int argc, char *argv[])
         {
             create(params[0]);
         }
+    }
+
+    else if(strcmp(mainCMD, "build") == 0){
+        
     }
 
     else if (strcmp(mainCMD, "-h") == 0)
@@ -158,6 +175,14 @@ void printVersion()
     printf(SEPERATOR);
 }
 
+void printNoProjectFound()
+{
+    printf(SEPERATOR);
+    printf(HEADING, "E R R O R");
+    printf(INFO, "No CBuilder project was found");
+    printf(SEPERATOR);
+}
+
 void create(char *path)
 {
     char projectPath[MAX_LENGTH_PATH];
@@ -189,14 +214,16 @@ void create(char *path)
         {
             Directory *ressource = getRessourceDirectory();
 
-            if(ressource == NULL){
+            if (ressource == NULL)
+            {
                 printf("[ERROR] : Ressource directory was not found | create");
                 return;
             }
 
             Entry *template = directoryGetEntry(ressource, "cbuilderfile", TYPE_FILE);
 
-            if(template == NULL){
+            if (template == NULL)
+            {
                 printf("[ERROR] : CBuilderfile template was not found | create");
             }
 
@@ -234,6 +261,74 @@ void create(char *path)
             directoryFree(ressource);
             entryFree(template);
         }
+}
+
+void getCommand(char *command, char *path, char *dest)
+{
+    char projectPath[MAX_LENGTH_PATH];
+    int st1 = findProject(path, projectPath);
+
+    if (st1 == -1)
+    {
+        printNoProjectFound();
+        return;
+    }
+
+    Directory *dir = directoryGet(projectPath);
+
+    if(dir == NULL){
+        printf("[ERROR] : Directory for the specified path was not found | getCommand \n");
+        return;
+    }
+
+    Entry *builderFile = directoryGetEntry(dir, "cbuilderfile", TYPE_FILE);
+
+    if(builderFile == NULL){
+        printf("[ERROR] : Entry for the specified directory was not found | getCommand \n");
+        return;
+    }
+
+    FILE *file = fopen(entryGetPath(builderFile), "r");
+
+    if(file == NULL){
+        printf("[ERROR] : CBuilderfile could not be opened | getCommand \n");
+        return;
+    }
+
+    int c;
+    char token[1024] = "";
+    List *tokenList = listCreate(sizeof(char *));
+
+    char specialTokens = {'{', '}', ':'};
+    int length = 3;
+
+    while((c = getc(file)) != EOF){
+        if(isspace(c) && strcmp(token, "") != 0){
+            listAdd(tokenList, token);
+            strcpy(token, "");
+        }
+        else if(utilIsInArray(specialTokens, length, c)){
+            if(strcmp(token, "") == 0){
+                strcat(token, c);
+                listAdd(tokenList, token);
+                strcpy(token, "");
+            }
+            else{
+                listAdd(tokenList, token);
+                strcpy(token, "");
+                strcat(token, c);
+                listAdd(tokenList, token);
+                strcpy(token, "");
+            }
+        }
+        else{
+            strcat(token, c);
+        }
+    }
+
+    directoryFree(dir);
+    entryFree(builderFile);
+    fclose(file);
 }
 
 bool isProject(Directory *dir)
@@ -354,8 +449,10 @@ Directory *getRessourceDirectory()
 
     char pathPro[MAX_LENGTH_PATH];
 
-    for(int i = strlen(pathExe) - 1; i >= 0; i--){
-        if(pathExe[i] == '/'){
+    for (int i = strlen(pathExe) - 1; i >= 0; i--)
+    {
+        if (pathExe[i] == '/')
+        {
             pathExe[i] = '\0';
             break;
         }
@@ -378,7 +475,7 @@ Directory *getRessourceDirectory()
         printf("[ERROR] : Directory could not be found | getRessourceDirectory \n");
         return NULL;
     }
-    
+
     return dir;
 }
 
@@ -425,5 +522,15 @@ bool isNull(void **p, int length)
         }
     }
 
+    return false;
+}
+
+bool utilIsInArray(char *arr, int length, int c)
+{
+    for(int i = 0; i < length; i++){
+        if(arr[i] == 'c'){
+            return true;
+        }
+    }
     return false;
 }

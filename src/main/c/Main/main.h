@@ -28,12 +28,25 @@ void printInvalidCMD();
 void printVersion();
 
 /**
+ * Function that displays an error if no project was found
+ */
+void printNoProjectFound();
+
+/**
  * Function that executes the cbuilder create -p command
  * 
  * @param path The path were the cbuilder project should be created
  */
 void create(char *path);
 
+/**
+ * Function used to get a command from the cbuilderfile
+ * 
+ * @param command The name of the command
+ * @param path The path were to look for the project
+ * @param dest The destination
+ */
+void getCommand(char *command, char *path, char *dest);
 /**
  * Function that checks if a CBuilder project exists in a passed directory
  * 
