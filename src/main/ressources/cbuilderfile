@@ -1,10 +1,10 @@
 build {
-    prefix: gcc
+    prefix: gcc -c
     suffix: -o cbuilder
 }
 
 debug {
-    prefix: gcc -g
+    prefix: gcc -c -g
     suffix: -o cbuilder
 }
 

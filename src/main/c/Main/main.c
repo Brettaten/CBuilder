@@ -2,19 +2,21 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "main.h"
 #include "../Util/display.h"
 #include "../Util/List/list.h"
+#include "../Util/Stack/stack.h"
 #include "../Directory/directory.h"
 
 /**
- * Functionn that checks if a character c is in the passed array 
- * 
+ * Functionn that checks if a character c is in the passed array
+ *
  * @param arr The array
  * @param length The length of the array
  * @param c The character
- * 
+ *
  * @return true if c is in arr, false if c is not in arr
  */
 bool utilIsInArray(char *arr, int length, int c);
@@ -32,18 +34,9 @@ int main(int argc, char *argv[])
 
     if (strcmp(mainCMD, "create") == 0)
     {
-        int length = 1;
-        int lengthAct = 0;
-        char *params[length];
-        int st1 = setArrayToNull((void **)params, length);
+        char path[MAX_LENGTH_PATH] = ".";
 
-        if (st1 == -1)
-        {
-            printf("[ERROR] : Function setArrayToNull failed! | main \n");
-            return -1;
-        }
-
-        for (int i = 2; i < argc; i += 2)
+        for (int i = 2; i < argc; i++)
         {
             if (strcmp(argv[i], "-h") == 0)
             {
@@ -66,8 +59,8 @@ int main(int argc, char *argv[])
                     printInvalidCMD();
                     return -1;
                 }
-                params[0] = argv[i + 1];
-                lengthAct++;
+                strcpy(path, argv[i + 1]);
+                i++;
             }
             else
             {
@@ -76,18 +69,92 @@ int main(int argc, char *argv[])
             }
         }
 
-        if (lengthAct == 0)
-        {
-            create(".");
-        }
-        else
-        {
-            create(params[0]);
-        }
+        create(path);
     }
 
-    else if(strcmp(mainCMD, "build") == 0){
-        
+    else if (strcmp(mainCMD, "build") == 0)
+    {
+        char path[MAX_LENGTH_PATH] = ".";
+        bool debug = false;
+
+        for (int i = 2; i < argc; i++)
+        {
+            if (strcmp(argv[i], "-h") == 0)
+            {
+                if (argc != 3)
+                {
+                    printInvalidCMD();
+                    return -1;
+                }
+                else
+                {
+                    printHelpBuild();
+                    return 0;
+                }
+            }
+
+            else if (strcmp(argv[i], "-p") == 0)
+            {
+                if (argc <= i + 1)
+                {
+                    printInvalidCMD();
+                    return -1;
+                }
+                strcpy(path, argv[i + 1]);
+                i++;
+            }
+
+            else if (strcmp(argv[i], "-d") == 0)
+            {
+                debug = true;
+            }
+            else
+            {
+                printInvalidCMD();
+                return -1;
+            }
+        }
+        build(path, debug);
+    }
+
+    else if (strcmp(mainCMD, "clear") == 0)
+    {
+        char path[MAX_LENGTH_PATH] = ".";
+
+        for (int i = 2; i < argc; i++)
+        {
+            if (strcmp(argv[i], "-h") == 0)
+            {
+                if (argc != 3)
+                {
+                    printInvalidCMD();
+                    return -1;
+                }
+                else
+                {
+                    printHelpClear();
+                    return 0;
+                }
+            }
+
+            else if (strcmp(argv[i], "-p") == 0)
+            {
+                if (argc <= i + 1)
+                {
+                    printInvalidCMD();
+                    return -1;
+                }
+                strcpy(path, argv[i + 1]);
+                i++;
+            }
+
+            else
+            {
+                printInvalidCMD();
+                return -1;
+            }
+        }
+        clear(path);
     }
 
     else if (strcmp(mainCMD, "-h") == 0)
@@ -150,7 +217,43 @@ void printHelpCreate()
     printf(LIST, "CBuilder will create the project at the specified path if no CBuilder project in this dirctory was found");
     printf(SEPERATOR);
     printf(HEADING, "A R G U M E N T S");
-    printf(LINE, "-p", "specifies a direct or indirect path");
+    printf(LINE, "-p [PATH]", "specifies a direct or indirect path");
+    printf(SEPERATOR);
+}
+
+void printHelpBuild()
+{
+    printf(SEPERATOR);
+    printf(HEADING, "B U I L D");
+    printf(INFO, "By using this command, CBuilder compiles all c files int the src/main/c directory to object files.");
+    printf(INFO, "When using the -d flag, the object files are placed in target/debug when not in target/prod.");
+    printf(INFO, "Lastly, the object files are linked and the executable is placed in the bin directory.");
+    printf(EMPTY);
+    printf(LIST, "CBuilder will go up the directory tree to find a CBuilder project. It wil start at -p or the CWD");
+    printf(LIST, "When a project was found, CBuilder compiles all c files to object files");
+    printf(LIST, "For debugging use the -d flag");
+    printf(LIST, "CBuilder manages object files with or without debug information separatly in target/prod and target/debug");
+    printf(LIST, "CBuilder will check if the right object file of each c file already exists before compiling it");
+    printf(LIST, "CBuilder will only compile it if no object file exists or if the object file was created before the c file was last modified");
+    printf(LIST, "Lastly, CBuilder will link the object files in target/prod or target/debug to an executable that is placed in the bin directory");
+    printf(SEPERATOR);
+    printf(HEADING, "A R G U M E N T S");
+    printf(LINE, "-p [PATH]", "specifies a direct or indirect path");
+    printf(LINE, "-d", "adds debug information");
+    printf(SEPERATOR);
+}
+
+void printHelpClear()
+{
+    printf(SEPERATOR);
+    printf(HEADING, "C L E A R");
+    printf(INFO, "By using this command, CBuilder deletes all object files, located in the target directory.");
+    printf(EMPTY);
+    printf(LIST, "CBuilder will go up the directory tree to find a CBuilder project. It wil start at -p or the CWD");
+    printf(LIST, "When a project was found, CBuilder deletes all obj files located in the target directory");
+    printf(SEPERATOR);
+    printf(HEADING, "A R G U M E N T S");
+    printf(LINE, "-p [PATH]", "specifies a direct or indirect path");
     printf(SEPERATOR);
 }
 
@@ -200,135 +303,428 @@ void create(char *path)
         project = true;
     }
 
-    if (projectPath)
+    if (project)
+    {
+        printf(SEPERATOR);
+        printf(HEADING, "I N F O");
+        printf(LINE, "A CBuilder project exists at:", projectPath);
+        printf(SEPERATOR);
+        return;
+    }
+    else
+    {
+        Directory *ressource = getRessourceDirectory();
 
-        if (project)
+        if (ressource == NULL)
         {
-            printf(SEPERATOR);
-            printf(HEADING, "I N F O");
-            printf(LINE, "A CBuilder project exists at:", projectPath);
-            printf(SEPERATOR);
+            printf("[ERROR] : Ressource directory was not found | create");
             return;
         }
-        else
+
+        Entry *template = directoryGetEntry(ressource, "cbuilderfile", TYPE_FILE);
+
+        if (template == NULL)
         {
-            Directory *ressource = getRessourceDirectory();
-
-            if (ressource == NULL)
-            {
-                printf("[ERROR] : Ressource directory was not found | create");
-                return;
-            }
-
-            Entry *template = directoryGetEntry(ressource, "cbuilderfile", TYPE_FILE);
-
-            if (template == NULL)
-            {
-                printf("[ERROR] : CBuilderfile template was not found | create");
-            }
-
-            if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile") || !fileCopy(path, "cbuilderfile", directoryGetPath(ressource), entryGetName(template)))
-            {
-                printf("[ERROR] : Something went wrong during project creation | create \n");
-                return;
-            }
-
-            char pathSrc[MAX_LENGTH_PATH];
-            strcpy(pathSrc, path);
-            strcat(pathSrc, "/src");
-
-            if (!directoryCreate(pathSrc, "main") || !directoryCreate(pathSrc, "test"))
-            {
-                printf("[ERROR] : Something went wrong during project creation | create \n");
-                return;
-            }
-
-            char pathMain[MAX_LENGTH_PATH];
-            strcpy(pathMain, pathSrc);
-            strcat(pathMain, "/main");
-
-            if (!directoryCreate(pathMain, "c") || !directoryCreate(pathMain, "ressources"))
-            {
-                printf("[ERROR] : Something went wrong during project creation | create \n");
-                return;
-            }
-
-            printf(SEPERATOR);
-            printf(HEADING, "S U C E S S S");
-            printf(LINE, "CBuilder project created at:", projectPath);
-            printf(SEPERATOR);
-
-            directoryFree(ressource);
-            entryFree(template);
+            printf("[ERROR] : CBuilderfile template was not found | create");
         }
+
+        if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile") || !fileCopy(path, "cbuilderfile", directoryGetPath(ressource), entryGetName(template)))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTarget[MAX_LENGTH_PATH];
+        strcpy(pathTarget, path);
+        strcat(pathTarget, "/target");
+
+        if (!directoryCreate(pathTarget, "prod") || !directoryCreate(pathTarget, "debug"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathSrc[MAX_LENGTH_PATH];
+        strcpy(pathSrc, path);
+        strcat(pathSrc, "/src");
+
+        if (!directoryCreate(pathSrc, "main") || !directoryCreate(pathSrc, "test"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathMain[MAX_LENGTH_PATH];
+        strcpy(pathMain, pathSrc);
+        strcat(pathMain, "/main");
+
+        if (!directoryCreate(pathMain, "c") || !directoryCreate(pathMain, "ressources"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        printf(SEPERATOR);
+        printf(HEADING, "S U C E S S S");
+        printf(LINE, "CBuilder project created at:", projectPath);
+        printf(SEPERATOR);
+
+        directoryFree(ressource);
+        entryFree(template);
+    }
 }
 
-void getCommand(char *command, char *path, char *dest)
+void build(char *path, bool debug)
 {
     char projectPath[MAX_LENGTH_PATH];
+    bool project = false;
+
     int st1 = findProject(path, projectPath);
 
     if (st1 == -1)
     {
-        printNoProjectFound();
-        return;
+        directoryNormalizePath(projectPath, path);
+        project = false;
+    }
+    else
+    {
+        project = true;
     }
 
-    Directory *dir = directoryGet(projectPath);
+    if (project)
+    {
+        Directory *dir = directoryGet(projectPath);
 
-    if(dir == NULL){
-        printf("[ERROR] : Directory for the specified path was not found | getCommand \n");
+        if (dir == NULL)
+        {
+            printf("[ERROR] : Directory for the specified path was not found | build \n");
+            return;
+        }
+
+        Entry *builderFile = directoryGetEntry(dir, "cbuilderfile", TYPE_FILE);
+
+        if (builderFile == NULL)
+        {
+            printf("[ERROR] : Entry for the specified directory was not found | build \n");
+            return;
+        }
+
+        char builderFilePath[MAX_LENGTH_PATH];
+        strcpy(builderFilePath, entryGetPath(builderFile));
+        char prefix[MAX_LENGTH_PATH];
+        char suffix[MAX_LENGTH_PATH];
+        char relTarget[MAX_LENGTH_PATH];
+
+        char command[64];
+
+        if (debug)
+        {
+            strcpy(command, "build_debug");
+            strcpy(relTarget, "/target/debug");
+        }
+        else
+        {
+            strcpy(command, "build");
+            strcpy(relTarget, "/target/prod");
+        }
+
+        getCommand(command, builderFilePath, prefix, suffix);
+
+        char filePath[MAX_LENGTH_PATH];
+        char systemCommand[MAX_LENGTH_PATH];
+
+        directoryFree(dir);
+        entryFree(builderFile);
+
+        Directory *src = directoryGet(strcat(projectPath, "/src/main/c"));
+
+        if (src == NULL)
+        {
+            printf("[ERROR] : The c directory of the project was not found | build \n");
+            return;
+        }
+
+        Directory *target = directoryGet(strcat(projectPath, relTarget));
+
+        if (target == NULL)
+        {
+            printf("[ERROR] : The %s directory of the project was not found | build \n", relTarget);
+            return;
+        }
+
+        Stack *stackSrc = stackCreate(sizeof(directoryGetSize()));
+        Stack *stackTarget = stackCreate(sizeof(directoryGetSize()));
+
+        if (stackSrc == NULL || stackTarget == NULL)
+        {
+            printf("[ERROR] : Function stackCreate failed | build \n");
+            return;
+        }
+
+        int st1 = stackPush(stackSrc, src);
+        int st2 = stackpush(stackTarget, target);
+
+        if (st1 == -1 || st2 == -1)
+        {
+            printf("[ERROR] : Function stackPush failed | build \n");
+            return;
+        }
+
+        while (stackLength(stackSrc) > 0)
+        {
+            Directory *tempSrc = stackPop(stackSrc);
+            Directory *tempTarget = stackPop(stackTarget);
+
+            if (tempSrc == NULL || tempTarget == NULL)
+            {
+                printf("[ERROR] : Function stackPop failed | build \n");
+                return;
+            }
+
+            for (int i = 0; i < directoryGetEntryAmount(tempSrc); i++)
+            {
+                Entry *tempEntrySrc = directoryGetEntryAt(tempSrc, i);
+
+                if (tempEntrySrc == NULL)
+                {
+                    printf("[ERROR] : Function directoryGetEntryAt failed | build \n");
+                    return;
+                }
+
+                if (entryGetType(tempEntrySrc) == TYPE_DIRECTORY)
+                {
+                    Directory *newDirSrc = directoryGet(entryGetPath(tempEntrySrc));
+
+                    if (newDirSrc == NULL)
+                    {
+                        printf("[ERROR] : Function directoryGet failed | build \n");
+                        return;
+                    }
+
+                    bool st3 = directoryCreate(directoryGetPath(tempTarget), entryGetName(tempEntrySrc));
+
+                    if (st3 == false)
+                    {
+                        printf("[ERROR] : Function directoryCreate failed | build \n");
+                        return;
+                    }
+
+                    Directory *newDirTarget = directoryGet(strcat(directoryGetPath(tempTarget), entryGetName(tempEntrySrc)));
+
+                    if (newDirTarget == NULL)
+                    {
+                        printf("[ERROR] : Function directoryGet failed | build \n");
+                        return;
+                    }
+
+                    stackPush(stackSrc, newDirSrc);
+                    stackPush(stackTarget, newDirTarget);
+
+                    directoryFree(newDirSrc);
+                    directoryFree(newDirTarget);
+                }
+
+                else{
+                    Entry *tempEntryTarget = directoryGetEntry(tempTarget, entryGetName(tempEntrySrc), TYPE_FILE);
+
+                    strcat(systemCommand, prefix);
+                    strcat(systemCommand, entryGetPath(tempEntrySrc));
+                    strcat(systemCommand, suffix);
+
+                    if(tempEntryTarget != NULL && entryGetLastModified(tempEntryTarget) < entryGetLastModified(tempEntrySrc)){
+                        int st4 = remove(entryGetPath(tempEntryTarget));
+
+                        if(st4 != 0){
+                            printf("[ERROR] : Function remove failed | build \n");
+                            return;
+                        }
+                        //int st5 = system()
+                    }
+                    else if(tempEntryTarget == NULL){
+                        //compile
+                    }
+                    entryFree(tempEntryTarget);
+                    strcpy(systemCommand, "");
+                }
+
+                entryFree(tempEntrySrc);
+            }
+            directoryFree(tempSrc);
+            directoryFree(tempTarget);
+        }
+        stackFree(stackSrc);
+        stackFree(stackTarget);
+    }
+    else
+    {
+        printf(SEPERATOR);
+        printf(HEADING, "E R R O R");
+        printf(LINE, "No CBuilder project was found at:", projectPath);
+        printf(SEPERATOR);
         return;
     }
+}
 
-    Entry *builderFile = directoryGetEntry(dir, "cbuilderfile", TYPE_FILE);
+void clear(char *path)
+{
+}
 
-    if(builderFile == NULL){
-        printf("[ERROR] : Entry for the specified directory was not found | getCommand \n");
-        return;
-    }
+int getCommand(char *command, char *path, char *destPrefix, char *destSuffix)
+{
+    FILE *file = fopen(path, "r");
 
-    FILE *file = fopen(entryGetPath(builderFile), "r");
-
-    if(file == NULL){
+    if (file == NULL)
+    {
         printf("[ERROR] : CBuilderfile could not be opened | getCommand \n");
-        return;
+        return -1;
     }
 
     int c;
     char token[1024] = "";
-    List *tokenList = listCreate(sizeof(char *));
+    List *tokenList = listCreate(1024);
 
-    char specialTokens = {'{', '}', ':'};
+    char specialTokens[] = {'{', '}', ':'};
     int length = 3;
 
-    while((c = getc(file)) != EOF){
-        if(isspace(c) && strcmp(token, "") != 0){
-            listAdd(tokenList, token);
-            strcpy(token, "");
-        }
-        else if(utilIsInArray(specialTokens, length, c)){
-            if(strcmp(token, "") == 0){
-                strcat(token, c);
-                listAdd(tokenList, token);
-                strcpy(token, "");
-            }
-            else{
-                listAdd(tokenList, token);
-                strcpy(token, "");
-                strcat(token, c);
+    bool isString = false;
+
+    while ((c = getc(file)) != EOF)
+    {
+
+        char temp[2];
+        temp[0] = c;
+        temp[1] = '\0';
+
+        if (isspace(c) && isString == false)
+        {
+            if (strcmp(token, "") != 0)
+            {
                 listAdd(tokenList, token);
                 strcpy(token, "");
             }
         }
-        else{
-            strcat(token, c);
+        else if (utilIsInArray(specialTokens, length, c) && isString == false)
+        {
+            if (strcmp(token, "") == 0)
+            {
+                strcat(token, temp);
+                listAdd(tokenList, token);
+                strcpy(token, "");
+            }
+            else
+            {
+                listAdd(tokenList, token);
+                strcpy(token, "");
+                strcat(token, temp);
+                listAdd(tokenList, token);
+                strcpy(token, "");
+            }
+        }
+        else if (strcmp(temp, "\"") == 0)
+        {
+            if (strcmp(token, "") != 0)
+            {
+                listAdd(tokenList, token);
+                strcpy(token, "");
+            }
+            if (isString)
+            {
+                isString = false;
+            }
+            else
+            {
+                isString = true;
+            }
+        }
+        else
+        {
+            strcat(token, temp);
         }
     }
 
-    directoryFree(dir);
-    entryFree(builderFile);
     fclose(file);
+
+    bool isCommand = false;
+    char *prefix = NULL;
+    char *suffix = NULL;
+
+    for (int i = 0; i < listLength(tokenList); i++)
+    {
+        char *tkn = listGet(tokenList, i);
+
+        if (strcmp(tkn, command) == 0 && isCommand == false)
+        {
+            char *nextToken = listGet(tokenList, i + 1);
+
+            if (nextToken != NULL && strcmp(nextToken, "{") == 0)
+            {
+                isCommand = true;
+                free(nextToken);
+                i++;
+            }
+            else
+            {
+                free(nextToken);
+            }
+        }
+
+        else if (strcmp(tkn, "prefix") == 0 && isCommand)
+        {
+            char *nextToken = listGet(tokenList, i + 1);
+
+            if (nextToken != NULL && strcmp(nextToken, ":") == 0)
+            {
+                free(nextToken);
+                prefix = listGet(tokenList, i + 2);
+                i += 2;
+            }
+            else
+            {
+                free(nextToken);
+            }
+        }
+
+        else if (strcmp(tkn, "suffix") == 0 && isCommand)
+        {
+            char *nextToken = listGet(tokenList, i + 1);
+
+            if (nextToken != NULL && strcmp(nextToken, ":") == 0)
+            {
+                free(nextToken);
+                suffix = listGet(tokenList, i + 2);
+                i += 2;
+            }
+            else
+            {
+                free(nextToken);
+            }
+        }
+
+        else if (strcmp(tkn, "}") == 0 && isCommand)
+        {
+            free(tkn);
+            break;
+        }
+        free(tkn);
+    }
+
+    if (prefix == NULL || suffix == NULL)
+    {
+        free(prefix);
+        free(suffix);
+        free(tokenList);
+        printf("[ERROR] : Could not read command from cbuilderfile | getCommand \n");
+        return -1;
+    }
+
+    strcpy(destPrefix, prefix);
+    strcpy(destSuffix, suffix);
+
+    free(prefix);
+    free(suffix);
+    free(tokenList);
+
+    return 0;
 }
 
 bool isProject(Directory *dir)
@@ -344,16 +740,32 @@ bool isProject(Directory *dir)
         return false;
     }
 
+    Directory *dirTarget = directoryGetSub(dir, "target");
+
+    if (dirTarget == NULL)
+    {
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirTarget, "prod", TYPE_DIRECTORY) || !directoryIsEntry(dirTarget, "debug", TYPE_DIRECTORY))
+    {
+        directoryFree(dirTarget);
+        return false;
+    }
+
     Directory *dirSrc = directoryGetSub(dir, "src");
 
     if (dirSrc == NULL)
     {
+        directoryFree(dirTarget);
         printf("[ERROR] : Could not find sub directory | isProject \n");
         return false;
     }
 
     if (!directoryIsEntry(dirSrc, "main", TYPE_DIRECTORY) || !directoryIsEntry(dirSrc, "test", TYPE_DIRECTORY))
     {
+        directoryFree(dirTarget);
         directoryFree(dirSrc);
         return false;
     }
@@ -362,6 +774,7 @@ bool isProject(Directory *dir)
 
     if (dirMain == NULL)
     {
+        directoryFree(dirTarget);
         directoryFree(dirSrc);
         printf("[ERROR] : Could not find sub directory | isProject \n");
         return false;
@@ -369,11 +782,13 @@ bool isProject(Directory *dir)
 
     if (!directoryIsEntry(dirMain, "c", TYPE_DIRECTORY) || !directoryIsEntry(dirMain, "ressources", TYPE_DIRECTORY))
     {
+        directoryFree(dirTarget);
         directoryFree(dirSrc);
         directoryFree(dirMain);
         return false;
     }
 
+    directoryFree(dirTarget);
     directoryFree(dirSrc);
     directoryFree(dirMain);
 
@@ -479,27 +894,6 @@ Directory *getRessourceDirectory()
     return dir;
 }
 
-int setArrayToNull(void **p, int length)
-{
-    if (p == NULL)
-    {
-        printf("[ERROR] : List is Null | setArrayToNull \n");
-        return -1;
-    }
-
-    if (length == 0)
-    {
-        printf("[INFO] : List has a length of zero | setArrayToNull \n");
-    }
-
-    for (int i = 0; i < length; i++)
-    {
-        p[i] = NULL;
-    }
-
-    return 0;
-}
-
 bool isNull(void **p, int length)
 {
     if (p == NULL)
@@ -527,8 +921,10 @@ bool isNull(void **p, int length)
 
 bool utilIsInArray(char *arr, int length, int c)
 {
-    for(int i = 0; i < length; i++){
-        if(arr[i] == 'c'){
+    for (int i = 0; i < length; i++)
+    {
+        if (arr[i] == c)
+        {
             return true;
         }
     }

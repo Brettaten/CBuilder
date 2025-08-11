@@ -100,6 +100,18 @@ int directoryGetEntryAmount(Directory *dir);
 Entry *directoryGetEntry(Directory *dir, char *name, int type);
 
 /**
+ * Function used to get a entry at the passed index
+ * 
+ * @param dir The directory
+ * @param index the index
+ * 
+ * @return Success: A pointer to an entry struct | Failure: null
+ * 
+ * @note The returned entry is a deep copy and thus has to be freed by the caller
+ */
+Entry *directoryGetEntryAt(Directory *dir, int index);
+
+/**
  * Function used to determine whether an entry exists in a directory or not
  * 
  * @param dir The directory
@@ -132,6 +144,11 @@ Directory *directoryGetParent(Directory *dir);
  * @note The returned directory has to be freed by the caller
  */
 Directory *directoryGetSub(Directory *dir, char *name);
+
+/**
+ * Function used to get the size of a directory struct
+ */
+int directoryGetSize();
 
 /**
  * Function used to free a directory

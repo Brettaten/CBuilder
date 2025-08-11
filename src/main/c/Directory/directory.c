@@ -760,6 +760,32 @@ Entry *directoryGetEntry(Directory *dir, char *name, int type)
     return NULL;
 }
 
+Entry *directoryGetEntryAt(Directory *dir, int index)
+{
+    if(dir == NULL){
+        printf("[ERROR] : Directory is null | directoryGetEntryAt \n");
+        return NULL;
+    }
+
+    if(index < 0 || index >= dir->entryAmount){
+        printf("[ERROR] : Index is not in bounds | directoryGetEntryAt \n");
+        return NULL;
+    }
+
+    Entry *entry = dir->entries[index];
+
+    Entry *cp = (Entry *) malloc(sizeof(Entry));
+
+    if(cp == NULL){
+        printf("[ERROR] : Memory allocation failed | directoryGetEntryAt \n");
+        return NULL;
+    }
+
+    memcpy(cp, entry, sizeof(Entry));
+
+    return cp;
+}
+
 bool directoryIsEntry(Directory *dir, char *name, int type)
 {
     if (dir == NULL)
@@ -855,6 +881,11 @@ Directory *directoryGetSub(Directory *dir, char *name)
     entryFree(entry);
 
     return dirSub;
+}
+
+int directoryGetSize()
+{
+    return sizeof(Directory);
 }
 
 void directoryFree(Directory *dir)

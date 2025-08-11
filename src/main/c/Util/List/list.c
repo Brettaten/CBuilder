@@ -70,7 +70,7 @@ void *listGet(List *pList, int index)
         return NULL;
     }
 
-    memcpy_s(cp, pList->size, value, pList->size);
+    memcpy(cp, value, pList->size);
 
     return cp;
 }
@@ -102,7 +102,7 @@ int listSet(List *pList, void *value, int index)
         printf("[ERROR] : Memory allocation failed | listSet \n");
         return -1;
     }
-    memcpy_s(cp, pList->size, value, pList->size);
+    memcpy(cp, value, pList->size);
 
     void *lp = pList->data[index];
 
@@ -147,7 +147,7 @@ int listAdd(List *pList, void *value)
         printf("[ERROR] : Memory allocation failed | listAdd \n");
         return -1;
     }
-    memcpy_s(cp, pList->size, value, pList->size);
+    memcpy(cp, value, pList->size);
 
     pList->data[pList->length] = cp;
     pList->length++;
