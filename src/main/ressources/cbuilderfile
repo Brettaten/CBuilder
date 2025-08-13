@@ -1,11 +1,9 @@
 build {
-    prefix: gcc -c
-    suffix: -o cbuilder
+    cmd: gcc -c $CFILE -o $OBJFILE
 }
 
 debug {
-    prefix: gcc -c -g
-    suffix: -o cbuilder
+cmd: gcc -c -g $CFILE -o $OBJFILE
 }
 
 

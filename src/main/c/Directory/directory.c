@@ -188,6 +188,10 @@ bool directoryCreate(char *directoryPath, char *directoryName)
     return true;
 }
 
+bool directoryDelete(char *directoryPath, char *directoryName){
+    
+}
+
 int directoryGetExecutablePath(char *dest)
 {
     char path[MAX_LENGTH_PATH];

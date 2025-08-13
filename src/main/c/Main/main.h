@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include "../Directory/directory.h"
+#include "../Util/String/string.h"
 
 // Header guard
 #ifndef MAIN
@@ -76,12 +77,12 @@ void create(char *path);
  * 
  * @param command The name of the command
  * @param path The path were to look for the project
- * @param destPrefix The destination of the prefix
- * @param destSuffix destSuffix
+ * @param destCmd The destination of the command
  * 
  * @return Success: 0 | Failure: -1
  */
-int getCommand(char *command, char *path, char *destPrefix, char *destSuffix);
+int getCommand(char *command, char *path, String *destCmd);
+
 /**
  * Function that checks if a CBuilder project exists in a passed directory
  * 

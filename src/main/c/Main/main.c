@@ -8,6 +8,7 @@
 #include "../Util/display.h"
 #include "../Util/List/list.h"
 #include "../Util/Stack/stack.h"
+#include "../Util/String/string.h"
 #include "../Directory/directory.h"
 
 /**
@@ -411,8 +412,11 @@ void build(char *path, bool debug)
 
         char builderFilePath[MAX_LENGTH_PATH];
         strcpy(builderFilePath, entryGetPath(builderFile));
-        char prefix[MAX_LENGTH_PATH];
-        char suffix[MAX_LENGTH_PATH];
+
+        String *systemCommand = stringCreate(NULL); 
+        String *cFile = stringCreate("$CFILE");
+        String *objFile = stringCreate("$OBJFILE");
+
         char relTarget[MAX_LENGTH_PATH];
 
         char command[64];
@@ -428,10 +432,9 @@ void build(char *path, bool debug)
             strcpy(relTarget, "/target/prod");
         }
 
-        getCommand(command, builderFilePath, prefix, suffix);
+        getCommand(command, builderFilePath, systemCommand);
 
         char filePath[MAX_LENGTH_PATH];
-        char systemCommand[MAX_LENGTH_PATH];
 
         directoryFree(dir);
         entryFree(builderFile);
@@ -527,9 +530,10 @@ void build(char *path, bool debug)
                 else{
                     Entry *tempEntryTarget = directoryGetEntry(tempTarget, entryGetName(tempEntrySrc), TYPE_FILE);
 
-                    strcat(systemCommand, prefix);
-                    strcat(systemCommand, entryGetPath(tempEntrySrc));
-                    strcat(systemCommand, suffix);
+                    String *cPath = stringCreate(directoryGetPath(tempEntrySrc));
+                    String *objPath = stringCreate(strcat(directoryGetPath(tempTarget), entryGetName(tempEntrySrc)));
+                    stringReplace(systemCommand, cFile, cPath);
+                    stringReplace(systemCommand, objFile, objPath);
 
                     if(tempEntryTarget != NULL && entryGetLastModified(tempEntryTarget) < entryGetLastModified(tempEntrySrc)){
                         int st4 = remove(entryGetPath(tempEntryTarget));
@@ -538,13 +542,16 @@ void build(char *path, bool debug)
                             printf("[ERROR] : Function remove failed | build \n");
                             return;
                         }
-                        //int st5 = system()
+                        system(stringToArr(systemCommand));
                     }
                     else if(tempEntryTarget == NULL){
-                        //compile
+                        system(stringToArr(systemCommand));
                     }
+
                     entryFree(tempEntryTarget);
-                    strcpy(systemCommand, "");
+                    stringFree(cPath);
+                    stringFree(objPath);
+                    stringClear(systemCommand);
                 }
 
                 entryFree(tempEntrySrc);
@@ -554,6 +561,9 @@ void build(char *path, bool debug)
         }
         stackFree(stackSrc);
         stackFree(stackTarget);
+        stringFree(systemCommand);
+        stringFree(cFile);
+        stringFree(objFile);
     }
     else
     {
@@ -569,7 +579,7 @@ void clear(char *path)
 {
 }
 
-int getCommand(char *command, char *path, char *destPrefix, char *destSuffix)
+int getCommand(char *command, char *path, String *destCmd)
 {
     FILE *file = fopen(path, "r");
 
@@ -645,8 +655,7 @@ int getCommand(char *command, char *path, char *destPrefix, char *destSuffix)
     fclose(file);
 
     bool isCommand = false;
-    char *prefix = NULL;
-    char *suffix = NULL;
+    char *cmd = NULL;
 
     for (int i = 0; i < listLength(tokenList); i++)
     {
@@ -668,30 +677,14 @@ int getCommand(char *command, char *path, char *destPrefix, char *destSuffix)
             }
         }
 
-        else if (strcmp(tkn, "prefix") == 0 && isCommand)
+        else if (strcmp(tkn, "cmd") == 0 && isCommand)
         {
             char *nextToken = listGet(tokenList, i + 1);
 
             if (nextToken != NULL && strcmp(nextToken, ":") == 0)
             {
                 free(nextToken);
-                prefix = listGet(tokenList, i + 2);
-                i += 2;
-            }
-            else
-            {
-                free(nextToken);
-            }
-        }
-
-        else if (strcmp(tkn, "suffix") == 0 && isCommand)
-        {
-            char *nextToken = listGet(tokenList, i + 1);
-
-            if (nextToken != NULL && strcmp(nextToken, ":") == 0)
-            {
-                free(nextToken);
-                suffix = listGet(tokenList, i + 2);
+                cmd = listGet(tokenList, i + 2);
                 i += 2;
             }
             else
@@ -708,20 +701,19 @@ int getCommand(char *command, char *path, char *destPrefix, char *destSuffix)
         free(tkn);
     }
 
-    if (prefix == NULL || suffix == NULL)
+    if (cmd == NULL)
     {
-        free(prefix);
-        free(suffix);
+        free(cmd);
         free(tokenList);
         printf("[ERROR] : Could not read command from cbuilderfile | getCommand \n");
         return -1;
     }
 
-    strcpy(destPrefix, prefix);
-    strcpy(destSuffix, suffix);
+    String *sysCommand = stringCreate(cmd);
+    stringFree(destCmd);
+    destCmd = sysCommand;
 
-    free(prefix);
-    free(suffix);
+    free(cmd);
     free(tokenList);
 
     return 0;

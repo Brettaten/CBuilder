@@ -43,6 +43,17 @@ Directory *directoryGet(char *path);
 bool directoryCreate(char *directoryPath, char *directoryName);
 
 /**
+ * Function used to create a dirctory at the specified path
+ * 
+ * @param directoryPath the parent directory of the new directory
+ * @param directoryName the name of the new directory
+ * 
+ * @return Success: true | Failure: false
+ * 
+ */
+bool directoryDelete(char *directoryPath, char *directoryName);
+
+/**
  * Function used to get the executable path
  * 
  * @param dest The path to the executable path
