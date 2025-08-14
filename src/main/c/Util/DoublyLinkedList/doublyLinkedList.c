@@ -23,7 +23,7 @@ DoublyLinkedListNode *doublyLinkedListGetNode(DoublyLinkedList *pList, int index
  *
  * @return true or false
  */
-bool isIndexInBounds(DoublyLinkedList *pList, int index);
+bool isIndexInBoundsDoubly(DoublyLinkedList *pList, int index);
 
 /**
  * Function used to free a node
@@ -78,7 +78,7 @@ void *doublyLinkedListGet(DoublyLinkedList *pList, int index)
         return NULL;
     }
 
-    if (!isIndexInBounds(pList, index))
+    if (!isIndexInBoundsDoubly(pList, index))
     {
         printf("[INFO] : Index out of bounds | doublyLinkedListGet \n");
         return NULL;
@@ -119,7 +119,7 @@ int doublyLinkedListSet(DoublyLinkedList *pList, void *value, int index)
         return -1;
     }
 
-    if (!isIndexInBounds(pList, index))
+    if (!isIndexInBoundsDoubly(pList, index))
     {
         printf("[INFO] : Index out of bounds | doublyLinkedListSet \n");
         return -1;
@@ -221,7 +221,7 @@ int doublyLinkedListAddIndex(DoublyLinkedList *pList, void *value, int index)
         return -1;
     }
 
-    if (!isIndexInBounds(pList, index))
+    if (!isIndexInBoundsDoubly(pList, index))
     {
         printf("[INFO] : Index out of bounds | doublyLinkedListAddIndex \n");
         return -1;
@@ -304,7 +304,7 @@ int doublyLinkedListRemove(DoublyLinkedList *pList, int index)
         return -1;
     }
 
-    if (!isIndexInBounds(pList, index))
+    if (!isIndexInBoundsDoubly(pList, index))
     {
         printf("[INFO] : Index out of bounds | doublyLinkedListRemove \n");
         return -1;
@@ -527,7 +527,7 @@ DoublyLinkedListNode *doublyLinkedListGetNode(DoublyLinkedList *pList, int index
         return NULL;
     }
 
-    if (!isIndexInBounds(pList, index))
+    if (!isIndexInBoundsDoubly(pList, index))
     {
         printf("[INFO] : Index out of bounds | doublyLinkedListGetNode\n");
         return NULL;
@@ -557,11 +557,11 @@ DoublyLinkedListNode *doublyLinkedListGetNode(DoublyLinkedList *pList, int index
     return node;
 }
 
-bool isIndexInBounds(DoublyLinkedList *pList, int index)
+bool isIndexInBoundsDoubly(DoublyLinkedList *pList, int index)
 {
     if (pList == NULL)
     {
-        printf("[ERROR] : Pointer to list is NULL | isIndexInBounds \n");
+        printf("[ERROR] : Pointer to list is NULL | isIndexInBoundsDoubly \n");
         return -1;
     }
 

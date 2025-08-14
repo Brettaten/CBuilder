@@ -21,7 +21,7 @@ typedef struct List
  *
  * @return true or false
  */
-bool isIndexInBounds(List *pList, int index);
+bool isIndexInBoundsList(List *pList, int index);
 
 List *listCreate(int size)
 {
@@ -55,7 +55,7 @@ void *listGet(List *pList, int index)
         return NULL;
     }
 
-    if (!isIndexInBounds(pList, index))
+    if (!isIndexInBoundsList(pList, index))
     {
         printf("[INFO] : Index out of bounds | listGet \n");
         return NULL;
@@ -70,7 +70,7 @@ void *listGet(List *pList, int index)
         return NULL;
     }
 
-    memcpy(cp, value, pList->size);
+    memcpy_s(cp, pList->size, value, pList->size);
 
     return cp;
 }
@@ -89,7 +89,7 @@ int listSet(List *pList, void *value, int index)
         return -1;
     }
 
-    if (!isIndexInBounds(pList, index))
+    if (!isIndexInBoundsList(pList, index))
     {
         printf("[INFO] : Index out of bounds | listSet \n");
         return -1;
@@ -102,7 +102,7 @@ int listSet(List *pList, void *value, int index)
         printf("[ERROR] : Memory allocation failed | listSet \n");
         return -1;
     }
-    memcpy(cp, value, pList->size);
+    memcpy_s(cp, pList->size, value, pList->size);
 
     void *lp = pList->data[index];
 
@@ -147,7 +147,7 @@ int listAdd(List *pList, void *value)
         printf("[ERROR] : Memory allocation failed | listAdd \n");
         return -1;
     }
-    memcpy(cp, value, pList->size);
+    memcpy_s(cp, pList->size, value, pList->size);
 
     pList->data[pList->length] = cp;
     pList->length++;
@@ -169,7 +169,7 @@ int listAddIndex(List *pList, void *value, int index)
         return -1;
     }
 
-    if (!isIndexInBounds(pList, index))
+    if (!isIndexInBoundsList(pList, index))
     {
         printf("[INFO] : Index out of bounds | listAddIndex \n");
         return -1;
@@ -217,7 +217,7 @@ int listSwap(List *pList, int index1, int index2)
         return -1;
     }
 
-    if (!isIndexInBounds(pList, index1) || !isIndexInBounds(pList, index2))
+    if (!isIndexInBoundsList(pList, index1) || !isIndexInBoundsList(pList, index2))
     {
         printf("[INFO] : Index out of bounds | listSwap \n");
         return -1;
@@ -230,6 +230,42 @@ int listSwap(List *pList, int index1, int index2)
     return 0;
 }
 
+List *listCopy(List *pList)
+{
+    if(pList == NULL){
+        printf("[WARN] : Pointer to list is NULL | listCopy \n");
+        return NULL;
+    }
+
+    List *listCpy = listCreate(pList->size);
+
+    if(listCopy == NULL){
+        printf("[ERROR] : Function listCreate failed | listCopy \n");
+        return NULL;
+    }
+
+    for(int i = 0; i < pList->length; i++){
+        void *temp;
+        temp = listGet(pList, i);
+
+        if(temp == NULL){
+            printf("[ERROR] : Function listGet failed | listCopy \n");
+            return NULL;
+        }
+
+        int st1 = listAdd(listCpy, temp);
+
+        if(st1 == -1){
+            printf("[ERROR] : Function listAdd failed | listCopy \n");
+            return NULL;
+        }
+
+        free(temp);
+    }
+    
+    return listCpy;
+}
+
 int listRemove(List *pList, int index)
 {
     if (pList == NULL)
@@ -238,7 +274,7 @@ int listRemove(List *pList, int index)
         return -1;
     }
 
-    if (!isIndexInBounds(pList, index))
+    if (!isIndexInBoundsList(pList, index))
     {
         printf("[INFO] : Index out of bounds | listRemove \n");
         return -1;
@@ -309,17 +345,12 @@ int listSize(List *pList)
     return pList->size;
 }
 
-bool isIndexInBounds(List *pList, int index)
+bool isIndexInBoundsList(List *pList, int index)
 {
     if (pList == NULL)
     {
-        printf("[ERROR] : Pointer to list is NULL | isIndexInBounds \n");
+        printf("[ERROR] : Pointer to list is NULL | isIndexInBoundsList \n");
         return -1;
-    }
-
-    if (pList == NULL)
-    {
-        return false;
     }
 
     if (index < 0 || index >= pList->length)

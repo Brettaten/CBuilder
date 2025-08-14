@@ -86,6 +86,15 @@ int listAddIndex(List *pList, void *value, int index);
 int listSwap(List *pList, int index1, int index2);
 
 /**
+ * Function used to create a deep copy of a list
+ * 
+ * @param pList the pointer to the list
+ * 
+ * @return Success: the copy of the list | Failure: NULL
+ */
+List *listCopy(List *pList);
+
+/**
  * Function used to remove the data at the specified index
  * 
  * @param pList pointer to the list

@@ -413,7 +413,7 @@ void build(char *path, bool debug)
         char builderFilePath[MAX_LENGTH_PATH];
         strcpy(builderFilePath, entryGetPath(builderFile));
 
-        String *systemCommand = stringCreate(NULL); 
+        String *systemCommand = stringCreate(NULL);
         String *cFile = stringCreate("$CFILE");
         String *objFile = stringCreate("$OBJFILE");
 
@@ -439,7 +439,10 @@ void build(char *path, bool debug)
         directoryFree(dir);
         entryFree(builderFile);
 
-        Directory *src = directoryGet(strcat(projectPath, "/src/main/c"));
+        char srcPath[MAX_LENGTH_PATH];
+        strcpy(srcPath, projectPath);
+        strcat(srcPath, "/src/main/c");
+        Directory *src = directoryGet(srcPath);
 
         if (src == NULL)
         {
@@ -447,7 +450,10 @@ void build(char *path, bool debug)
             return;
         }
 
-        Directory *target = directoryGet(strcat(projectPath, relTarget));
+        char targetPath[MAX_LENGTH_PATH];
+        strcpy(targetPath, projectPath);
+        strcat(targetPath, relTarget);
+        Directory *target = directoryGet(targetPath);
 
         if (target == NULL)
         {
@@ -455,8 +461,8 @@ void build(char *path, bool debug)
             return;
         }
 
-        Stack *stackSrc = stackCreate(sizeof(directoryGetSize()));
-        Stack *stackTarget = stackCreate(sizeof(directoryGetSize()));
+        Stack *stackSrc = stackCreate(directoryGetSize());
+        Stack *stackTarget = stackCreate(directoryGetSize());
 
         if (stackSrc == NULL || stackTarget == NULL)
         {
@@ -465,13 +471,16 @@ void build(char *path, bool debug)
         }
 
         int st1 = stackPush(stackSrc, src);
-        int st2 = stackpush(stackTarget, target);
+        int st2 = stackPush(stackTarget, target);
 
         if (st1 == -1 || st2 == -1)
         {
             printf("[ERROR] : Function stackPush failed | build \n");
             return;
         }
+
+        String *objType = stringCreate(".o");
+        String *cType = stringCreate(".c");
 
         while (stackLength(stackSrc) > 0)
         {
@@ -487,6 +496,13 @@ void build(char *path, bool debug)
             for (int i = 0; i < directoryGetEntryAmount(tempSrc); i++)
             {
                 Entry *tempEntrySrc = directoryGetEntryAt(tempSrc, i);
+
+                String *cPath = stringCreate(entryGetPath(tempEntrySrc));
+                String *type = stringSub(cPath, stringLength(cPath) - 2, stringLength(cPath) - 1);
+                String *name = stringSub(cPath, 0, stringLength(cPath) - 3);
+                String *objPath = stringCreate(directoryGetPath(tempTarget));
+                stringCat(objPath, name);
+                stringCat(objPath, objType);
 
                 if (tempEntrySrc == NULL)
                 {
@@ -511,8 +527,13 @@ void build(char *path, bool debug)
                         printf("[ERROR] : Function directoryCreate failed | build \n");
                         return;
                     }
+                    
+                    char temp[MAX_LENGTH_PATH];
+                    strcpy(temp, directoryGetPath(tempTarget));
+                    strcat(temp, "/");
+                    strcat(temp, entryGetName(tempEntrySrc));
 
-                    Directory *newDirTarget = directoryGet(strcat(directoryGetPath(tempTarget), entryGetName(tempEntrySrc)));
+                    Directory *newDirTarget = directoryGet(temp);
 
                     if (newDirTarget == NULL)
                     {
@@ -527,34 +548,38 @@ void build(char *path, bool debug)
                     directoryFree(newDirTarget);
                 }
 
-                else{
+                else if(stringEquals(type, cType))
+                {
                     Entry *tempEntryTarget = directoryGetEntry(tempTarget, entryGetName(tempEntrySrc), TYPE_FILE);
 
-                    String *cPath = stringCreate(directoryGetPath(tempEntrySrc));
-                    String *objPath = stringCreate(strcat(directoryGetPath(tempTarget), entryGetName(tempEntrySrc)));
                     stringReplace(systemCommand, cFile, cPath);
                     stringReplace(systemCommand, objFile, objPath);
 
-                    if(tempEntryTarget != NULL && entryGetLastModified(tempEntryTarget) < entryGetLastModified(tempEntrySrc)){
+                    if (tempEntryTarget != NULL && entryGetLastModified(tempEntryTarget) < entryGetLastModified(tempEntrySrc))
+                    {
                         int st4 = remove(entryGetPath(tempEntryTarget));
 
-                        if(st4 != 0){
+                        if (st4 != 0)
+                        {
                             printf("[ERROR] : Function remove failed | build \n");
                             return;
                         }
                         system(stringToArr(systemCommand));
                     }
-                    else if(tempEntryTarget == NULL){
+                    else if (tempEntryTarget == NULL)
+                    {
                         system(stringToArr(systemCommand));
                     }
 
                     entryFree(tempEntryTarget);
-                    stringFree(cPath);
-                    stringFree(objPath);
                     stringClear(systemCommand);
                 }
 
                 entryFree(tempEntrySrc);
+                stringFree(cPath);
+                stringFree(objPath);
+                stringFree(type);
+                stringFree(name);
             }
             directoryFree(tempSrc);
             directoryFree(tempTarget);
@@ -564,6 +589,8 @@ void build(char *path, bool debug)
         stringFree(systemCommand);
         stringFree(cFile);
         stringFree(objFile);
+        stringFree(objType);
+        stringFree(cType);
     }
     else
     {
@@ -709,9 +736,24 @@ int getCommand(char *command, char *path, String *destCmd)
         return -1;
     }
 
-    String *sysCommand = stringCreate(cmd);
-    stringFree(destCmd);
-    destCmd = sysCommand;
+    int st1 = stringClear(destCmd);
+
+    if (st1 == -1)
+    {
+        printf("[ERROR] : Function stringClear failed | getCommand \n");
+        return -1;
+    }
+
+    for (int i = 0; i < strlen(cmd); i++)
+    {
+        int st2 = stringAdd(destCmd, cmd[i]);
+
+        if (st2 == -1)
+        {
+            printf("[ERROR] : Function stringAdd failed | getCommand \n");
+            return -1;
+        }
+    }
 
     free(cmd);
     free(tokenList);
