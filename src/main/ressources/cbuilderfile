@@ -1,9 +1,9 @@
 build {
-    cmd: gcc -c $CFILE -o $OBJFILE
+    cmd: "gcc -c $CFILE -o $OBJFILE"
 }
 
 debug {
-cmd: gcc -c -g $CFILE -o $OBJFILE
+    cmd: "gcc -c -g $CFILE -o $OBJFILE"
 }
 
 
