@@ -1,0 +1,11 @@
+build {
+    cmd: "gcc -c $CFILE -o $OBJFILE"
+}
+
+debug {
+    cmd: "gcc -c -g $CFILE -o $OBJFILE"
+}
+
+link {
+    cmd: "gcc $OBJFILES -o $BINPATH/cbuilder"
+}

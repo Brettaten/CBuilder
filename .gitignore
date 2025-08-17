@@ -7,4 +7,3 @@
 dockerfile
 compose.yml
 .dockerignore
-cbuilderfile
