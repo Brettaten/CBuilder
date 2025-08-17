@@ -517,6 +517,9 @@ void build(char *path, bool debug)
         String *objType = stringCreate(".o");
         String *cType = stringCreate(".c");
 
+        int fileCounter = 0;
+        int alteredFileCounter = 0;
+
         while (stackLength(stackSrc) > 0)
         {
             Directory *tempSrc = stackPop(stackSrc);
@@ -589,6 +592,8 @@ void build(char *path, bool debug)
 
                 else if (stringEquals(type, cType))
                 {
+                    fileCounter++;
+
                     char *tempObjName = stringToArr(objName);
                     Entry *tempEntryTarget = directoryGetEntry(tempTarget, tempObjName, TYPE_FILE);
                     free(tempObjName);
@@ -598,6 +603,8 @@ void build(char *path, bool debug)
 
                     if (tempEntryTarget != NULL && entryGetLastModified(tempEntryTarget) < entryGetLastModified(tempEntrySrc))
                     {
+                        alteredFileCounter++;
+
                         int st4 = remove(entryGetPath(tempEntryTarget));
 
                         if (st4 != 0)
@@ -611,6 +618,8 @@ void build(char *path, bool debug)
                     }
                     else if (tempEntryTarget == NULL)
                     {
+                        alteredFileCounter++;
+
                         char *tempCmd = stringToArr(systemCommand);
                         system(tempCmd);
                         free(tempCmd);
@@ -667,6 +676,17 @@ void build(char *path, bool debug)
         stringFree(oFileList);
         stringFree(binPath);
         stringFree(binDirPath);
+
+        char fileCounterC[16];
+        char alteredFileCounterC[16];
+        sprintf(fileCounterC, "%d", fileCounter);
+        sprintf(alteredFileCounterC, "%d", alteredFileCounter);
+
+        printf(SEPERATOR);
+        printf(HEADING, "S U C C E S S");
+        printf(LINE, "Files compiled:", alteredFileCounterC);
+        printf(LINE, "Files linked:", fileCounterC);
+        printf(SEPERATOR);
     }
     else
     {
