@@ -6,4 +6,6 @@ debug {
     cmd: "gcc -c -g $CFILE -o $OBJFILE"
 }
 
-
+link {
+    cmd: "gcc $OBJFILES -o $BINPATH/app"
+}
