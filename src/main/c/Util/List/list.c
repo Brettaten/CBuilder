@@ -11,6 +11,8 @@ typedef struct List
     int size;
     int buffer;
     int length;
+    void *(*copyElement)(void *);
+    void (*freeElement)(void *);
 } List;
 
 /**
@@ -23,7 +25,7 @@ typedef struct List
  */
 bool isIndexInBoundsList(List *pList, int index);
 
-List *listCreate(int size)
+List *listCreate(int size, void *(*copyElement)(void *), void (*freeElement)(void *))
 {
     List *pList = (List *)malloc(sizeof(List));
     if (pList == NULL)
@@ -43,6 +45,8 @@ List *listCreate(int size)
     pList->buffer = 8;
     pList->length = 0;
     pList->size = size;
+    pList->copyElement = copyElement;
+    pList->freeElement = freeElement;
 
     return pList;
 }
@@ -62,15 +66,30 @@ void *listGet(List *pList, int index)
     }
 
     void *value = pList->data[index];
-    void *cp = (void *)malloc(pList->size);
+    void *cp;
 
-    if (cp == NULL)
+    if (pList->copyElement == NULL)
     {
-        printf("[ERROR] : Memory allocation failed | listGet \n");
-        return NULL;
-    }
+        cp = (void *)malloc(pList->size);
 
-    memcpy_s(cp, pList->size, value, pList->size);
+        if (cp == NULL)
+        {
+            printf("[ERROR] : Memory allocation failed | listGet \n");
+            return NULL;
+        }
+
+        memcpy(cp, value, pList->size);
+    }
+    else
+    {
+        cp = pList->copyElement(value);
+
+        if (cp == NULL)
+        {
+            printf("[ERROR] : Function copyElement failed | listGet \n");
+            return NULL;
+        }
+    }
 
     return cp;
 }
@@ -95,18 +114,41 @@ int listSet(List *pList, void *value, int index)
         return -1;
     }
 
-    void *cp = (void *)malloc(pList->size);
+    void *cp = NULL;
 
-    if (cp == NULL)
+    if (pList->copyElement == NULL)
     {
-        printf("[ERROR] : Memory allocation failed | listSet \n");
-        return -1;
+        cp = (void *)malloc(pList->size);
+
+        if (cp == NULL)
+        {
+            printf("[ERROR] : Memory allocation failed | listSet \n");
+            return -1;
+        }
+        memcpy(cp, value, pList->size);
     }
-    memcpy_s(cp, pList->size, value, pList->size);
+    else
+    {
+        cp = pList->copyElement(value);
+
+        if (cp == NULL)
+        {
+            printf("[ERROR] : Function copyElement failed | listSet \n");
+            return -1;
+        }
+    }
 
     void *lp = pList->data[index];
 
-    free(lp);
+    if (pList->freeElement == NULL)
+    {
+        free(lp);
+    }
+    else
+    {
+        pList->freeElement(lp);
+    }
+
     lp = NULL;
 
     pList->data[index] = cp;
@@ -140,14 +182,29 @@ int listAdd(List *pList, void *value)
         pList->buffer = pList->buffer * 2;
     }
 
-    void *cp = (void *)malloc(pList->size);
+    void *cp;
 
-    if (cp == NULL)
+    if (pList->copyElement == NULL)
     {
-        printf("[ERROR] : Memory allocation failed | listAdd \n");
-        return -1;
+        cp = (void *)malloc(pList->size);
+
+        if (cp == NULL)
+        {
+            printf("[ERROR] : Memory allocation failed | listAdd \n");
+            return -1;
+        }
+        memcpy(cp, value, pList->size);
     }
-    memcpy_s(cp, pList->size, value, pList->size);
+    else
+    {
+        cp = pList->copyElement(value);
+
+        if (cp == NULL)
+        {
+            printf("[ERROR] : Function copyElement failed | listAdd \n");
+            return -1;
+        }
+    }
 
     pList->data[pList->length] = cp;
     pList->length++;
@@ -230,39 +287,53 @@ int listSwap(List *pList, int index1, int index2)
     return 0;
 }
 
-List *listCopy(List *pList)
+void *listCopy(void *pList)
 {
-    if(pList == NULL){
+    List *cp = (List *) pList;
+
+    if (cp == NULL)
+    {
         printf("[WARN] : Pointer to list is NULL | listCopy \n");
         return NULL;
     }
 
-    List *listCpy = listCreate(pList->size);
+    List *listCpy = listCreate(cp->size, cp->copyElement, cp->freeElement);
 
-    if(listCopy == NULL){
+    if (listCopy == NULL)
+    {
         printf("[ERROR] : Function listCreate failed | listCopy \n");
         return NULL;
     }
 
-    for(int i = 0; i < pList->length; i++){
+    for (int i = 0; i < cp->length; i++)
+    {
         void *temp;
-        temp = listGet(pList, i);
+        temp = listGet(cp, i);
 
-        if(temp == NULL){
+        if (temp == NULL)
+        {
             printf("[ERROR] : Function listGet failed | listCopy \n");
             return NULL;
         }
 
         int st1 = listAdd(listCpy, temp);
 
-        if(st1 == -1){
+        if (st1 == -1)
+        {
             printf("[ERROR] : Function listAdd failed | listCopy \n");
             return NULL;
         }
 
-        free(temp);
+        if (cp->freeElement == NULL)
+        {
+            free(temp);
+        }
+        else
+        {
+            cp->freeElement(temp);
+        }
     }
-    
+
     return listCpy;
 }
 
@@ -299,28 +370,45 @@ int listRemove(List *pList, int index)
 
     void *lastP = pList->data[pList->length - 1];
 
-    free(lastP);
+    if (pList->freeElement == NULL)
+    {
+        free(lastP);
+    }
+    else
+    {
+        pList->freeElement(lastP);
+    }
+
     lastP = NULL;
     pList->length--;
 
     return 0;
 }
 
-void listFree(List *pList)
+void listFree(void *pList)
 {
-    if (pList == NULL)
+    List *cp = (List *) pList;
+
+    if (cp == NULL)
     {
         printf("[INFO] : Pointer to list is NULL | listFree \n");
         return;
     }
 
-    for (int i = 0; i < pList->length; i++)
+    for (int i = 0; i < cp->length; i++)
     {
-        free(pList->data[i]);
+        if (cp->freeElement == NULL)
+        {
+            free(cp->data[i]);
+        }
+        else
+        {
+            cp->freeElement(cp->data[i]);
+        }
     }
 
-    free(pList->data);
-    free(pList);
+    free(cp->data);
+    free(cp);
 }
 
 int listLength(List *pList)

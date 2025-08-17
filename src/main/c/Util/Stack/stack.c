@@ -8,11 +8,11 @@
 typedef struct Stack
 {
     DoublyLinkedList *list;
-    int size;
-    int length;
+    void *(*copyElement)(void *);
+    void (*freeElement)(void *);
 } Stack;
 
-Stack *stackCreate(int size)
+Stack *stackCreate(int size, void *(*copyElement)(void *), void (*freeElement)(void *))
 {
     Stack *pStack = (Stack *)malloc(sizeof(Stack));
 
@@ -22,10 +22,10 @@ Stack *stackCreate(int size)
         return NULL;
     }
 
-    DoublyLinkedList *pList = doublyLinkedListCreate(size);
+    DoublyLinkedList *pList = doublyLinkedListCreate(size, copyElement, freeElement);
     pStack->list = pList;
-    pStack->size = size;
-    pStack->length = 0;
+    pStack->copyElement = copyElement;
+    pStack->freeElement = freeElement;
 
     return pStack;
 }
@@ -52,8 +52,6 @@ int stackPush(Stack *pStack, void *value)
         return -1;
     }
 
-    pStack->length++;
-
     return 0;
 }
 
@@ -72,17 +70,21 @@ void *stackPop(Stack *pStack)
         printf("[ERROR] : Function stackPeek failed | stackPop \n");
         return NULL;
     }
-
-    int st1 = doublyLinkedListRemove(pStack->list, pStack->length - 1);
+    int length = stackLength(pStack);
+    int st1 = doublyLinkedListRemove(pStack->list, length - 1);
 
     if (st1 == -1)
     {
+        if(pStack->freeElement == NULL){
+            free(value);
+        }
+        else{
+            pStack->freeElement(value);
+        }
+
         printf("[ERROR] : Function doublyLinkedListRemove failed | stackPop \n");
-        free(value);
         return NULL;
     }
-
-    pStack->length--;
 
     return value;
 }
@@ -95,13 +97,14 @@ void *stackPeek(Stack *pStack)
         return NULL;
     }
 
-    if (pStack->length == 0)
+    int length = stackLength(pStack);
+    if (length == 0)
     {
-        printf("[INFO] : List is empty | stackPeek \n");
+        printf("[INFO] : Stack is empty | stackPeek \n");
         return NULL;
     }
 
-    void *value = doublyLinkedListGet(pStack->list, pStack->length - 1);
+    void *value = doublyLinkedListGet(pStack->list, length - 1);
 
     if (value == NULL)
     {
@@ -112,6 +115,37 @@ void *stackPeek(Stack *pStack)
     return value;
 }
 
+void *stackCopy(void *pStack)
+{
+    Stack *cp = (Stack *) pStack;
+
+    if(cp == NULL){
+        printf("[ERROR] : Stack is null | stackCopy \n");
+        return NULL;
+    }
+
+    Stack *copy = (Stack *) malloc(sizeof(Stack));
+
+    if(copy == NULL){
+        printf("[ERROR] : Memory allocation failed | stackCopy \n");
+        return NULL;
+    }
+
+    copy->copyElement = cp->copyElement;
+    copy->freeElement = cp->freeElement;
+
+    DoublyLinkedList *copyList = (DoublyLinkedList *) doublyLinkedListCopy(cp->list);
+
+    if(copyList == NULL){
+        printf("[ERROR] : Function doublyLinkedListCopy failed | stackCopy \n");
+        return NULL;
+    }
+
+    copy->list = copyList;
+
+    return copy;
+}
+
 int stackLength(Stack *pStack)
 {
     if (pStack == NULL)
@@ -120,7 +154,7 @@ int stackLength(Stack *pStack)
         return -1;
     }
 
-    return pStack->length;
+    return doublyLinkedListLength(pStack->list);
 }
 
 int stackSize(Stack *pStack)
@@ -131,12 +165,19 @@ int stackSize(Stack *pStack)
         return -1;
     }
 
-    return pStack->size;
+    return doublyLinkedListSize(pStack->list);
 }
 
-void stackFree(Stack *pStack)
+void stackFree(void *pStack)
 {
-    doublyLinkedListFree(pStack->list);
+    Stack *cp = (Stack *) pStack;
 
-    free(pStack);
+    if(cp == NULL){
+        printf("[WARN] : stack is null | stackFree \n");
+        return;
+    }
+
+    doublyLinkedListFree(cp->list);
+
+    free(cp);
 }

@@ -8,8 +8,6 @@
 typedef struct String
 {
     List *list;
-    int size;
-    int length;
 } String;
 
 /**
@@ -24,7 +22,7 @@ bool isIndexInBoundsString(String *pString, int index);
 
 String *stringCreate(char *string)
 {
-    List *list = listCreate(sizeof(char));
+    List *list = listCreate(sizeof(char), NULL, NULL);
 
     if (list == NULL)
     {
@@ -41,8 +39,6 @@ String *stringCreate(char *string)
     }
 
     pString->list = list;
-    pString->length = 0;
-    pString->size = sizeof(char);
 
     if (string != NULL)
     {
@@ -78,7 +74,7 @@ int stringAdd(String *pString, char value)
         return -1;
     }
 
-    pString->length++;
+    return 0;
 }
 
 int stringAddIndex(String *pString, char value, int index)
@@ -103,7 +99,7 @@ int stringAddIndex(String *pString, char value, int index)
         return -1;
     }
 
-    pString->length++;
+    return 0;
 }
 
 char stringGet(String *pString, int index)
@@ -199,7 +195,8 @@ int stringCat(String *pStringDest, String *pStringSrc)
         return -1;
     }
 
-    for (int i = 0; i < pStringSrc->length; i++)
+    int length = stringLength(pStringSrc);
+    for (int i = 0; i < length; i++)
     {
         char temp = stringGet(pStringSrc, i);
 
@@ -221,9 +218,11 @@ int stringCat(String *pStringDest, String *pStringSrc)
     return 0;
 }
 
-String *stringCopy(String *pString)
+void *stringCopy(void *pString)
 {
-    if (pString == NULL)
+
+    String *cp = (String *) pString;
+    if (cp == NULL)
     {
         printf("[ERROR] : String is null | stringCopy \n");
         return NULL;
@@ -237,9 +236,7 @@ String *stringCopy(String *pString)
         return NULL;
     }
 
-    stringCpy->length = pString->length;
-    stringCpy->size = pString->size;
-    stringCpy->list = listCopy(pString->list);
+    stringCpy->list = listCopy(cp->list);
 
     if (stringCpy->list == NULL)
     {
@@ -258,7 +255,8 @@ int stringClear(String *pString)
         return -1;
     }
 
-    for (int i = pString->length - 1; i >= 0; i--)
+    int length = stringLength(pString);
+    for (int i = length - 1; i >= 0; i--)
     {
         int st1 = stringRemove(pString, i);
 
@@ -332,7 +330,10 @@ int stringReplace(String *pString, String *pStringDest, String *pStringSrc)
         return -1;
     }
 
-    if (pStringDest->length > pString->length)
+    int lengthDest = stringLength(pStringDest);
+    int lengthSrc = stringLength(pStringSrc);
+    int length = stringLength(pString);
+    if (lengthDest > length)
     {
         printf("[INFO] : StringDest can not be longer than the main string | stringReplace \n");
         return -1;
@@ -341,11 +342,13 @@ int stringReplace(String *pString, String *pStringDest, String *pStringSrc)
     bool isMatch = false;
     int matchCounter = 0;
 
-    for (int i = 0; i < pString->length; i++)
+    for (int i = 0; i < length; i++)
     {
+        lengthDest = stringLength(pStringDest);
+        lengthSrc = stringLength(pStringSrc);
         if (isMatch)
         {
-            if (matchCounter < pStringDest->length && matchCounter < pStringSrc->length)
+            if (matchCounter < lengthDest && matchCounter < lengthSrc)
             {
                 char temp = stringGet(pStringSrc, matchCounter);
 
@@ -365,7 +368,7 @@ int stringReplace(String *pString, String *pStringDest, String *pStringSrc)
 
                 matchCounter++;
             }
-            else if (matchCounter < pStringDest->length)
+            else if (matchCounter < lengthDest)
             {
                 int st2 = stringRemove(pString, i);
 
@@ -379,7 +382,7 @@ int stringReplace(String *pString, String *pStringDest, String *pStringSrc)
                 matchCounter++;
             }
 
-            else if (matchCounter < pStringSrc->length)
+            else if (matchCounter < lengthSrc)
             {
                 char temp = stringGet(pStringSrc, matchCounter);
 
@@ -408,7 +411,7 @@ int stringReplace(String *pString, String *pStringDest, String *pStringSrc)
         }
         else
         {
-            int end = i + pStringDest->length - 1;
+            int end = i + lengthDest - 1;
 
             if (!isIndexInBoundsString(pString, end))
             {
@@ -445,12 +448,14 @@ bool stringEquals(String *pString1, String *pString2)
         return false;
     }
 
-    if (pString1->length != pString2->length)
+    int length1 = stringLength(pString1);
+    int length2 = stringLength(pString2);
+    if (length1 != length2)
     {
         return false;
     }
 
-    for (int i = 0; i < pString1->length; i++)
+    for (int i = 0; i < length1; i++)
     {
         char temp1 = stringGet(pString1, i);
         char temp2 = stringGet(pString2, i);
@@ -477,7 +482,8 @@ char *stringToArr(String *pString)
         return NULL;
     }
 
-    char *arr = (char *)malloc(sizeof(char) * (pString->length + 1));
+    int length = stringLength(pString);
+    char *arr = (char *)malloc(sizeof(char) * (length + 1));
 
     if (arr == NULL)
     {
@@ -485,7 +491,7 @@ char *stringToArr(String *pString)
         return NULL;
     }
 
-    for (int i = 0; i < pString->length; i++)
+    for (int i = 0; i < length; i++)
     {
         char temp = stringGet(pString, i);
 
@@ -496,7 +502,7 @@ char *stringToArr(String *pString)
         }
         arr[i] = temp;
     }
-    arr[pString->length] = '\0';
+    arr[length] = '\0';
 
     return arr;
 }
@@ -523,8 +529,6 @@ int stringRemove(String *pString, int index)
         return -1;
     }
 
-    pString->length--;
-
     return 0;
 }
 
@@ -536,7 +540,7 @@ int stringLength(String *pString)
         return -1;
     }
 
-    return pString->length;
+    return listLength(pString->list);
 }
 
 int stringSize(String *pString)
@@ -547,14 +551,15 @@ int stringSize(String *pString)
         return -1;
     }
 
-    return pString->size;
+    return listSize(pString->list);
 }
 
-void stringFree(String *pString)
+void stringFree(void *pString)
 {
-    listFree(pString->list);
+    String *cp = (String *) pString;
 
-    free(pString);
+    listFree(cp->list);
+    free(cp);
 }
 
 bool isIndexInBoundsString(String *pString, int index)
@@ -565,7 +570,8 @@ bool isIndexInBoundsString(String *pString, int index)
         return -1;
     }
 
-    if (index < 0 || index >= pString->length)
+    int length = stringLength(pString);
+    if (index < 0 || index >= length)
     {
         return false;
     }

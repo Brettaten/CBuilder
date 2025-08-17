@@ -3,8 +3,6 @@
  *
  * @note Only use this list to store data that has the same size as specified.
  * @note Only store one data type in each list to be safe.
- * @note When storing elements, that itself contain dynamic memory, make sure to free it
- * before freeing the element or the list.
  */
 typedef struct DoublyLinkedList DoublyLinkedList;
 
@@ -17,10 +15,12 @@ typedef struct DoublyLinkedListNode DoublyLinkedListNode;
  * Function that allocated memory for a doubly linked list struct
  *
  * @param size the size of the elements that will be stored in the list
+ * @param copyElement pointer to a function that deep copies an element, pass NULL for elements, where a shallow copy is sufficient
+ * @param freeElement pointer to a function that deep frees an element, pass NULL for elements, where a shallow free is sufficient
  *
  * @return Success: Pointer to the created list | Failure: NULL
  */
-DoublyLinkedList *doublyLinkedListCreate(int size);
+DoublyLinkedList *doublyLinkedListCreate(int size, void *(*copyElement)(void *), void(*freeElement)(void *));
 
 /**
  * Function that retrieves the element of the list at the passed index
@@ -76,15 +76,25 @@ int doublyLinkedListAdd(DoublyLinkedList *pList, void *value);
 int doublyLinkedListAddIndex(DoublyLinkedList *pList, void *value, int index);
 
 /**
+ * Function used to create a deep copy of a list
+ *
+ * @param pList the pointer to the list
+ *
+ * @return Success: the copy of the list | Failure: NULL
+ *
+ * @note Void datatypes are used for this function because one might
+ *      store this struct inside this struct and thus function pointers
+ *      with void datatype are needed
+ */
+void *doublyLinkedListCopy(void *pList);
+
+/**
  * Function used to remove the data at the specified index
  *
  * @param pList pointer to the list
  * @param index position in the list
  *
  * @return Success: 0 | Failure: -1
- *
- * @note This function only frees the pointer. If a struct is stored, that itself contains a pointer,
- * this pointer will not be freed.
  */
 int doublyLinkedListRemove(DoublyLinkedList *pList, int index);
 
@@ -176,10 +186,9 @@ int doublyLinkedListNodeSet(DoublyLinkedList *pList, DoublyLinkedListNode *pNode
  * Function used to free the passed list
  *
  * @param pList pointer to the list
- *
- * @return void
- *
- * @note This function frees the pointers of the stored data. If a struct is stored, that itself contains a pointer,
- * this pointer will not be freed.
+ * 
+ * @note Void datatypes are used for this function because one might
+ *      store this struct inside this struct and thus function pointers
+ *      with void datatype are needed
  */
-void doublyLinkedListFree(DoublyLinkedList *pList);
+void doublyLinkedListFree(void *pList);
