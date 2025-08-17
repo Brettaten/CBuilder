@@ -22,6 +22,24 @@
  */
 bool utilIsInArray(char *arr, int length, int c);
 
+/**
+ * Function that strips the file ending and returns the file name as a string
+ *
+ * @param name the file name with file extension
+ *
+ * @return Success: the file name without extension | Failure: NULL
+ */
+String *utilGetName(char *name);
+
+/**
+ * Function that strips the file name and returns the file extension as a string
+ *
+ * @param name the file name with file extension
+ *
+ * @return Success: the file extension without name | Failure: NULL
+ */
+String *utilGetEx(char *name);
+
 int main(int argc, char *argv[])
 {
 
@@ -402,6 +420,18 @@ void build(char *path, bool debug)
             return;
         }
 
+        Entry *bin = directoryGetEntry(dir, "bin", TYPE_DIRECTORY);
+
+        if (bin == NULL)
+        {
+            printf("[ERROR] : Bin directory was not found | build \n");
+            return;
+        }
+
+        String *binDirPath = stringCreate(entryGetPath(bin));
+
+        entryFree(bin);
+
         Entry *builderFile = directoryGetEntry(dir, "cbuilderfile", TYPE_FILE);
 
         if (builderFile == NULL)
@@ -423,7 +453,7 @@ void build(char *path, bool debug)
 
         if (debug)
         {
-            strcpy(command, "build_debug");
+            strcpy(command, "debug");
             strcpy(relTarget, "/target/debug");
         }
         else
@@ -433,6 +463,8 @@ void build(char *path, bool debug)
         }
 
         getCommand(command, builderFilePath, systemCommand);
+
+        char *commandBluePrint = stringToArr(systemCommand);
 
         char filePath[MAX_LENGTH_PATH];
 
@@ -461,8 +493,8 @@ void build(char *path, bool debug)
             return;
         }
 
-        Stack *stackSrc = stackCreate(directoryGetSize());
-        Stack *stackTarget = stackCreate(directoryGetSize());
+        Stack *stackSrc = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
+        Stack *stackTarget = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
 
         if (stackSrc == NULL || stackTarget == NULL)
         {
@@ -478,6 +510,9 @@ void build(char *path, bool debug)
             printf("[ERROR] : Function stackPush failed | build \n");
             return;
         }
+
+        String *oFileList = stringCreate(NULL);
+        String *delimiter = stringCreate(" ");
 
         String *objType = stringCreate(".o");
         String *cType = stringCreate(".c");
@@ -498,9 +533,13 @@ void build(char *path, bool debug)
                 Entry *tempEntrySrc = directoryGetEntryAt(tempSrc, i);
 
                 String *cPath = stringCreate(entryGetPath(tempEntrySrc));
-                String *type = stringSub(cPath, stringLength(cPath) - 2, stringLength(cPath) - 1);
-                String *name = stringSub(cPath, 0, stringLength(cPath) - 3);
+                String *name = utilGetName(entryGetName(tempEntrySrc));
+                String *type = utilGetEx(entryGetName(tempEntrySrc));
                 String *objPath = stringCreate(directoryGetPath(tempTarget));
+                String *objName = stringCopy(name);
+                stringCat(objName, objType);
+                String *slash = stringCreate("/");
+                stringCat(objPath, slash);
                 stringCat(objPath, name);
                 stringCat(objPath, objType);
 
@@ -527,7 +566,7 @@ void build(char *path, bool debug)
                         printf("[ERROR] : Function directoryCreate failed | build \n");
                         return;
                     }
-                    
+
                     char temp[MAX_LENGTH_PATH];
                     strcpy(temp, directoryGetPath(tempTarget));
                     strcat(temp, "/");
@@ -548,9 +587,11 @@ void build(char *path, bool debug)
                     directoryFree(newDirTarget);
                 }
 
-                else if(stringEquals(type, cType))
+                else if (stringEquals(type, cType))
                 {
-                    Entry *tempEntryTarget = directoryGetEntry(tempTarget, entryGetName(tempEntrySrc), TYPE_FILE);
+                    char *tempObjName = stringToArr(objName);
+                    Entry *tempEntryTarget = directoryGetEntry(tempTarget, tempObjName, TYPE_FILE);
+                    free(tempObjName);
 
                     stringReplace(systemCommand, cFile, cPath);
                     stringReplace(systemCommand, objFile, objPath);
@@ -564,22 +605,35 @@ void build(char *path, bool debug)
                             printf("[ERROR] : Function remove failed | build \n");
                             return;
                         }
-                        system(stringToArr(systemCommand));
+                        char *tempCmd = stringToArr(systemCommand);
+                        system(tempCmd);
+                        free(tempCmd);
                     }
                     else if (tempEntryTarget == NULL)
                     {
-                        system(stringToArr(systemCommand));
+                        char *tempCmd = stringToArr(systemCommand);
+                        system(tempCmd);
+                        free(tempCmd);
                     }
 
-                    entryFree(tempEntryTarget);
-                    stringClear(systemCommand);
+                    if (tempEntryTarget != NULL)
+                    {
+                        entryFree(tempEntryTarget);
+                    }
+                    stringFree(systemCommand);
+                    systemCommand = stringCreate(commandBluePrint);
+
+                    stringCat(oFileList, objPath);
+                    stringCat(oFileList, delimiter);
                 }
 
                 entryFree(tempEntrySrc);
                 stringFree(cPath);
                 stringFree(objPath);
+                stringFree(objName);
                 stringFree(type);
                 stringFree(name);
+                stringFree(slash);
             }
             directoryFree(tempSrc);
             directoryFree(tempTarget);
@@ -591,6 +645,28 @@ void build(char *path, bool debug)
         stringFree(objFile);
         stringFree(objType);
         stringFree(cType);
+        stringFree(delimiter);
+        free(commandBluePrint);
+
+        char linkCommand[] = "link";
+        String *linkSystemCommand = stringCreate(NULL);
+        String *objFiles = stringCreate("$OBJFILES");
+        String *binPath = stringCreate("$BINPATH");
+
+        getCommand(linkCommand, builderFilePath, linkSystemCommand);
+
+        stringReplace(linkSystemCommand, objFiles, oFileList);
+        stringReplace(linkSystemCommand, binPath, binDirPath);
+
+        char *tempLinkCmd = stringToArr(linkSystemCommand);
+        system(tempLinkCmd);
+        free(tempLinkCmd);
+
+        stringFree(linkSystemCommand);
+        stringFree(objFiles);
+        stringFree(oFileList);
+        stringFree(binPath);
+        stringFree(binDirPath);
     }
     else
     {
@@ -618,7 +694,7 @@ int getCommand(char *command, char *path, String *destCmd)
 
     int c;
     char token[1024] = "";
-    List *tokenList = listCreate(1024);
+    List *tokenList = listCreate(1024, NULL, NULL);
 
     char specialTokens[] = {'{', '}', ':'};
     int length = 3;
@@ -963,4 +1039,59 @@ bool utilIsInArray(char *arr, int length, int c)
         }
     }
     return false;
+}
+
+String *utilGetName(char *name)
+{
+    if (name == NULL)
+    {
+        printf("[ERROR] : name is null | utilGetName \n");
+        return NULL;
+    }
+
+    int length = strlen(name);
+    char cpy[length];
+
+    for (int i = 0; i < length; i++)
+    {
+        if (name[i] == '.')
+        {
+            cpy[i] = '\0';
+            break;
+        }
+        cpy[i] = name[i];
+    }
+    String *str = stringCreate(cpy);
+
+    return str;
+}
+
+String *utilGetEx(char *name)
+{
+    if (name == NULL)
+    {
+        printf("[ERROR] : name is null | utilGetName \n");
+        return NULL;
+    }
+
+    int length = strlen(name);
+    char ex[length];
+    bool isExt = false;
+
+    String *str = stringCreate(NULL);
+
+    for (int i = 0; i < length; i++)
+    {
+        if (isExt)
+        {
+            stringAdd(str, name[i]);
+        }
+        else if (name[i] == '.')
+        {
+            isExt = true;
+            stringAdd(str, name[i]);
+        }
+    }
+
+    return str;
 }

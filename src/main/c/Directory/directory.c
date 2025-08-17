@@ -892,14 +892,61 @@ int directoryGetSize()
     return sizeof(Directory);
 }
 
-void directoryFree(Directory *dir)
+void directoryFree(void *dir)
 {
-    for (int i = 0; i < dir->entryAmount; i++)
-    {
-        entryFree(dir->entries[i]);
+    Directory *cp = (Directory *) dir;
+
+    if(cp == NULL){
+        printf("[ERROR] : Directory is NULL | directoryFree \n");
+        return;
     }
-    free(dir->entries);
-    free(dir);
+
+    for (int i = 0; i < cp->entryAmount; i++)
+    {
+        entryFree(cp->entries[i]);
+    }
+    free(cp->entries);
+    free(cp);
+}
+
+void *directoryCopy(void *dir)
+{
+    Directory *cp = (Directory *) dir;
+
+    if(cp == NULL){
+        printf("[ERROR] : Directory is NULL | directoryCopy \n");
+        return NULL;
+    }
+
+    Directory *copy = (Directory *) malloc(sizeof(Directory));
+
+    if(copy == NULL){
+        printf("[ERROR] : Memory allocation failed | directoryCopy \n");
+        return NULL;
+    }
+
+    strcpy(copy->name, cp->name);
+    strcpy(copy->path, cp->path);
+    copy->entryAmount = cp->entryAmount;
+
+    Entry **entriesCopy = (Entry **) malloc(sizeof(Entry) * copy->entryAmount);
+
+    if(entriesCopy == NULL){
+        printf("[ERROR] : Memory allocation failed | directoryCopy \n");
+        return NULL;
+    }
+
+    copy->entries = entriesCopy;
+
+    for(int i = 0; i < copy->entryAmount; i++){
+        entriesCopy[i] = entryCopy(cp->entries[i]);
+
+        if(entriesCopy[i] == NULL){
+            printf("[ERROR] : Function entryCopy failed | directoryCopy \n");
+            return NULL;
+        }
+    }
+    return copy;
 }
 
 char *entryGetPath(Entry *entry)
@@ -946,9 +993,40 @@ time_t entryGetLastModified(Entry *entry)
     return entry->lastModified;
 }
 
-void entryFree(Entry *entry)
+void entryFree(void *entry)
 {
+    Entry *cp = (Entry *) entry;
+
+    if(cp == NULL){
+        printf("[ERROR] : Entry is null | entryFree \n");
+        return;
+    }
+
     free(entry);
+}
+
+void *entryCopy(void *entry)
+{
+    Entry *cp = (Entry *) entry;
+
+    if(cp == NULL){
+        printf("[ERROR] : Entry is null | entryCopy \n");
+        return NULL;
+    }
+
+    Entry *copy = (Entry *) malloc(sizeof(Entry));
+
+    if(copy == NULL){
+        printf("[ERROR] : Memory allocation failed | entryCopy \n");
+        return NULL;
+    }
+
+    copy->lastModified = cp->lastModified;
+    copy->type = cp->type;
+    strcpy(copy->name, cp->name);
+    strcpy(copy->path, cp->path);
+
+    return copy;
 }
 
 bool fileCreate(char *path, char *fileName)

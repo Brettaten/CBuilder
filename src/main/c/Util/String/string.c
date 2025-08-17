@@ -221,7 +221,7 @@ int stringCat(String *pStringDest, String *pStringSrc)
 void *stringCopy(void *pString)
 {
 
-    String *cp = (String *) pString;
+    String *cp = (String *)pString;
     if (cp == NULL)
     {
         printf("[ERROR] : String is null | stringCopy \n");
@@ -342,8 +342,11 @@ int stringReplace(String *pString, String *pStringDest, String *pStringSrc)
     bool isMatch = false;
     int matchCounter = 0;
 
-    for (int i = 0; i < length; i++)
+    int i = -1;
+
+    while (true)
     {
+        i++;
         lengthDest = stringLength(pStringDest);
         lengthSrc = stringLength(pStringSrc);
         if (isMatch)
@@ -357,8 +360,15 @@ int stringReplace(String *pString, String *pStringDest, String *pStringSrc)
                     printf("[ERROR] : Function stringGet failed | stringReplace \n");
                     return -1;
                 }
-
-                int st1 = stringSet(pString, temp, i);
+                int st1;
+                if (isIndexInBoundsString(pString, i))
+                {
+                    st1 = stringSet(pString, temp, i);
+                }
+                else
+                {
+                    st1 = stringAdd(pString, temp);
+                }
 
                 if (st1 == -1)
                 {
@@ -392,7 +402,15 @@ int stringReplace(String *pString, String *pStringDest, String *pStringSrc)
                     return -1;
                 }
 
-                int st3 = stringAddIndex(pString, temp, i);
+                int st3;
+                if (isIndexInBoundsString(pString, i))
+                {
+                    st3 = stringAddIndex(pString, temp, i);
+                }
+                else
+                {
+                    st3 = stringAdd(pString, temp);
+                }
 
                 if (st3 == -1)
                 {
@@ -556,7 +574,7 @@ int stringSize(String *pString)
 
 void stringFree(void *pString)
 {
-    String *cp = (String *) pString;
+    String *cp = (String *)pString;
 
     listFree(cp->list);
     free(cp);

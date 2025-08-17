@@ -166,7 +166,16 @@ int directoryGetSize();
  * 
  * @param dir The directory
  */
-void directoryFree(Directory *dir);
+void directoryFree(void *dir);
+
+/**
+ * Function used to copy a directory
+ * 
+ * @param dir the directory
+ * 
+ * @return Success: the copy of the directory | Failure: NULL
+ */
+void *directoryCopy(void *dir);
 
 /**
  * Function used to get the path of an entry
@@ -209,7 +218,16 @@ time_t entryGetLastModified(Entry *entry);
  * 
  * @param entry The entry
  */
-void entryFree(Entry *entry);
+void entryFree(void *entry);
+
+/**
+ * Function used to deep copy an entry
+ * 
+ * @param entry the entry
+ * 
+ * @return Success: the copied entry | Failure: NULL
+ */
+void *entryCopy(void *entry);
 
 /**
  * Function used to create a file
