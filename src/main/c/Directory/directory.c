@@ -7,6 +7,7 @@
 
 #include "directory.h"
 #include "../Util/os.h"
+#include "../Util/Stack/stack.h"
 
 typedef struct Directory
 {
@@ -188,8 +189,16 @@ bool directoryCreate(char *directoryPath, char *directoryName)
     return true;
 }
 
-bool directoryDelete(char *directoryPath, char *directoryName){
-    
+int directoryDelete(char *directoryPath)
+{
+    int status = _rmdir(directoryPath);
+
+    if (status != 0)
+    {
+        printf("[ERROR] : Function _rmdir failed | directoryDelete \n");
+        return -1;
+    }
+    return 0;
 }
 
 int directoryGetExecutablePath(char *dest)
@@ -420,6 +429,18 @@ bool directoryCreate(char *directoryPath, char *directoryName)
     return true;
 }
 
+int directoryDelete(char *directoryPath)
+{
+    int status = rmdir(directoryPath);
+
+    if (status != 0)
+    {
+        printf("[ERROR] : Function rmdir failed | directoryDelete \n");
+        return -1;
+    }
+    return 0;
+}
+
 int directoryGetExecutablePath(char *dest)
 {
     char path[MAX_LENGTH_PATH];
@@ -494,6 +515,7 @@ int utilGetEntryAmount(char *path)
 #elif defined(APPLE)
 
 #include <dirent.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <mach-o/dyld.h>
@@ -626,6 +648,18 @@ bool directoryCreate(char *directoryPath, char *directoryName)
     }
 
     return true;
+}
+
+int directoryDelete(char *directoryPath)
+{
+    int status = rmdir(directoryPath);
+
+    if (status != 0)
+    {
+        printf("[ERROR] : Function rmdir failed | directoryDelete \n");
+        return -1;
+    }
+    return 0;
 }
 
 int directoryGetExecutablePath(char *dest)
@@ -766,21 +800,24 @@ Entry *directoryGetEntry(Directory *dir, char *name, int type)
 
 Entry *directoryGetEntryAt(Directory *dir, int index)
 {
-    if(dir == NULL){
+    if (dir == NULL)
+    {
         printf("[ERROR] : Directory is null | directoryGetEntryAt \n");
         return NULL;
     }
 
-    if(index < 0 || index >= dir->entryAmount){
+    if (index < 0 || index >= dir->entryAmount)
+    {
         printf("[ERROR] : Index is not in bounds | directoryGetEntryAt \n");
         return NULL;
     }
 
     Entry *entry = dir->entries[index];
 
-    Entry *cp = (Entry *) malloc(sizeof(Entry));
+    Entry *cp = (Entry *)malloc(sizeof(Entry));
 
-    if(cp == NULL){
+    if (cp == NULL)
+    {
         printf("[ERROR] : Memory allocation failed | directoryGetEntryAt \n");
         return NULL;
     }
@@ -887,6 +924,105 @@ Directory *directoryGetSub(Directory *dir, char *name)
     return dirSub;
 }
 
+int directoryClear(Directory *dir)
+{
+    Stack *stack = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
+
+    if (stack == NULL)
+    {
+        printf("[ERROR] : Function stackCreate failed | directoryClear \n");
+        return -1;
+    }
+
+    int st1 = stackPush(stack, dir);
+
+    if (st1 == -1)
+    {
+        printf("[ERROR] : Function stackPush failed | directoryClear \n");
+        return -1;
+    }
+
+    int fileCounter = 0;
+
+    while (stackLength(stack) > 0)
+    {
+        Directory *temp = stackPop(stack);
+
+        char dirPath[MAX_LENGTH_PATH];
+        strcpy(dirPath, directoryGetPath(temp));
+
+        directoryFree(temp);
+        temp = directoryGet(dirPath);
+        stackPush(stack, temp);
+
+        if (temp == NULL)
+        {
+            printf("[ERROR] : Function stackPop failed | directoryClear \n");
+            return -1;
+        }
+
+        if (directoryGetEntryAmount(temp) == 0)
+        {
+            if (stackLength(stack) != 1)
+            {
+                int st1 = directoryDelete(directoryGetPath(temp));
+
+                if (st1 == -1)
+                {
+                    printf("[ERROR] : Function directoryDelete failed | directoryClear \n");
+                    return -1;
+                }
+            }
+            stackPop(stack);
+        }
+
+        for (int i = 0; i < directoryGetEntryAmount(temp); i++)
+        {
+            Entry *tempEntry = directoryGetEntryAt(temp, i);
+
+            if (tempEntry == NULL)
+            {
+                printf("[ERROR] : Function directoryGetEntryAt failed | directoryClear \n");
+                return -1;
+            }
+
+            if (entryGetType(tempEntry) == TYPE_DIRECTORY)
+            {
+                Directory *newDir = directoryGet(entryGetPath(tempEntry));
+
+                if (newDir == NULL)
+                {
+                    printf("[ERROR] : Function directoryGet failed | directoryClear \n");
+                    return -1;
+                }
+
+                stackPush(stack, newDir);
+
+                directoryFree(newDir);
+            }
+
+            else
+            {
+                fileCounter++;
+
+                int st2 = remove(entryGetPath(tempEntry));
+
+                if (st2 != 0)
+                {
+                    printf("[ERROR] : Function remove failed | directoryClear \n");
+                    return -1;
+                }
+            }
+
+            entryFree(tempEntry);
+        }
+        directoryFree(temp);
+    }
+    stackFree(stack);
+
+    return fileCounter;
+}
+
 int directoryGetSize()
 {
     return sizeof(Directory);
@@ -894,9 +1030,10 @@ int directoryGetSize()
 
 void directoryFree(void *dir)
 {
-    Directory *cp = (Directory *) dir;
+    Directory *cp = (Directory *)dir;
 
-    if(cp == NULL){
+    if (cp == NULL)
+    {
         printf("[ERROR] : Directory is NULL | directoryFree \n");
         return;
     }
@@ -911,16 +1048,18 @@ void directoryFree(void *dir)
 
 void *directoryCopy(void *dir)
 {
-    Directory *cp = (Directory *) dir;
+    Directory *cp = (Directory *)dir;
 
-    if(cp == NULL){
+    if (cp == NULL)
+    {
         printf("[ERROR] : Directory is NULL | directoryCopy \n");
         return NULL;
     }
 
-    Directory *copy = (Directory *) malloc(sizeof(Directory));
+    Directory *copy = (Directory *)malloc(sizeof(Directory));
 
-    if(copy == NULL){
+    if (copy == NULL)
+    {
         printf("[ERROR] : Memory allocation failed | directoryCopy \n");
         return NULL;
     }
@@ -929,19 +1068,22 @@ void *directoryCopy(void *dir)
     strcpy(copy->path, cp->path);
     copy->entryAmount = cp->entryAmount;
 
-    Entry **entriesCopy = (Entry **) malloc(sizeof(Entry) * copy->entryAmount);
+    Entry **entriesCopy = (Entry **)malloc(sizeof(Entry) * copy->entryAmount);
 
-    if(entriesCopy == NULL){
+    if (entriesCopy == NULL)
+    {
         printf("[ERROR] : Memory allocation failed | directoryCopy \n");
         return NULL;
     }
 
     copy->entries = entriesCopy;
 
-    for(int i = 0; i < copy->entryAmount; i++){
+    for (int i = 0; i < copy->entryAmount; i++)
+    {
         entriesCopy[i] = entryCopy(cp->entries[i]);
 
-        if(entriesCopy[i] == NULL){
+        if (entriesCopy[i] == NULL)
+        {
             printf("[ERROR] : Function entryCopy failed | directoryCopy \n");
             return NULL;
         }
@@ -995,9 +1137,10 @@ time_t entryGetLastModified(Entry *entry)
 
 void entryFree(void *entry)
 {
-    Entry *cp = (Entry *) entry;
+    Entry *cp = (Entry *)entry;
 
-    if(cp == NULL){
+    if (cp == NULL)
+    {
         printf("[ERROR] : Entry is null | entryFree \n");
         return;
     }
@@ -1007,16 +1150,18 @@ void entryFree(void *entry)
 
 void *entryCopy(void *entry)
 {
-    Entry *cp = (Entry *) entry;
+    Entry *cp = (Entry *)entry;
 
-    if(cp == NULL){
+    if (cp == NULL)
+    {
         printf("[ERROR] : Entry is null | entryCopy \n");
         return NULL;
     }
 
-    Entry *copy = (Entry *) malloc(sizeof(Entry));
+    Entry *copy = (Entry *)malloc(sizeof(Entry));
 
-    if(copy == NULL){
+    if (copy == NULL)
+    {
         printf("[ERROR] : Memory allocation failed | entryCopy \n");
         return NULL;
     }

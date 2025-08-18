@@ -43,15 +43,14 @@ Directory *directoryGet(char *path);
 bool directoryCreate(char *directoryPath, char *directoryName);
 
 /**
- * Function used to create a dirctory at the specified path
+ * Function used to delete a dirctory at the specified path
  * 
- * @param directoryPath the parent directory of the new directory
- * @param directoryName the name of the new directory
+ * @param directoryPath the path of the directory
  * 
- * @return Success: true | Failure: false
+ * @return Success: 0 | Failure: -1
  * 
  */
-bool directoryDelete(char *directoryPath, char *directoryName);
+int directoryDelete(char *directoryPath);
 
 /**
  * Function used to get the executable path
@@ -155,6 +154,15 @@ Directory *directoryGetParent(Directory *dir);
  * @note The returned directory has to be freed by the caller
  */
 Directory *directoryGetSub(Directory *dir, char *name);
+
+/**
+ * Function used to delete all files and sub directories of the passed directory
+ * 
+ * @param dir the directory
+ * 
+ * @return Success: the amount of deleted files | Failure: -1
+ */
+int directoryClear(Directory *dir);
 
 /**
  * Function used to get the size of a directory struct
