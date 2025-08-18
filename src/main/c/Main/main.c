@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "../Util/os.h"
 #include "../Util/display.h"
 #include "../Util/List/list.h"
 #include "../Util/Stack/stack.h"
@@ -661,6 +662,9 @@ void build(char *path, bool debug)
         String *linkSystemCommand = stringCreate(NULL);
         String *objFiles = stringCreate("$OBJFILES");
         String *binPath = stringCreate("$BINPATH");
+        String *permission = stringCreate("chmod a+x ");
+
+        stringCat(permission, binDirPath);
 
         getCommand(linkCommand, builderFilePath, linkSystemCommand);
 
@@ -669,6 +673,12 @@ void build(char *path, bool debug)
 
         char *tempLinkCmd = stringToArr(linkSystemCommand);
         system(tempLinkCmd);
+
+#ifdef LINUX
+        char *tempPermissionCmd = stringToArr(permission);
+        system(tempPermissionCmd);
+        free(tempPermissionCmd);
+#endif
         free(tempLinkCmd);
 
         stringFree(linkSystemCommand);
@@ -676,6 +686,7 @@ void build(char *path, bool debug)
         stringFree(oFileList);
         stringFree(binPath);
         stringFree(binDirPath);
+        stringFree(permission);
 
         char fileCounterC[16];
         char alteredFileCounterC[16];
@@ -1081,6 +1092,7 @@ String *utilGetName(char *name)
         }
         cpy[i] = name[i];
     }
+    cpy[length] = '\0';
     String *str = stringCreate(cpy);
 
     return str;
