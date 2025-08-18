@@ -1,7 +1,3 @@
-*src/.exe
-*.out
-*.bat
-*.sh
 .vscode
 .VSCodeCounter
 dockerfile
