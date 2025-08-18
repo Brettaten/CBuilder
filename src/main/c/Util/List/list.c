@@ -297,7 +297,7 @@ void *listCopy(void *pList)
         return NULL;
     }
 
-    List *listCpy = listCreate(cp->size, cp->copyElement, cp->freeElement);
+    List *listCopy = listCreate(cp->size, cp->copyElement, cp->freeElement);
 
     if (listCopy == NULL)
     {
@@ -316,7 +316,7 @@ void *listCopy(void *pList)
             return NULL;
         }
 
-        int st1 = listAdd(listCpy, temp);
+        int st1 = listAdd(listCopy, temp);
 
         if (st1 == -1)
         {
@@ -334,7 +334,7 @@ void *listCopy(void *pList)
         }
     }
 
-    return listCpy;
+    return listCopy;
 }
 
 int listRemove(List *pList, int index)
