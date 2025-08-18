@@ -678,6 +678,10 @@ void build(char *path, bool debug)
         char *tempPermissionCmd = stringToArr(permission);
         system(tempPermissionCmd);
         free(tempPermissionCmd);
+#elif defined(APPLE)
+        char *tempPermissionCmd = stringToArr(permission);
+        system(tempPermissionCmd);
+        free(tempPermissionCmd);
 #endif
         free(tempLinkCmd);
 
@@ -735,7 +739,7 @@ void clear(char *path)
         strcpy(debugPath, projectPath);
         strcat(prodPath, "/target/prod");
         strcat(debugPath, "/target/debug");
-  
+
         Directory *targetProd = directoryGet(prodPath);
 
         if (targetProd == NULL)
@@ -755,7 +759,8 @@ void clear(char *path)
         int fileCounterProd = directoryClear(targetProd);
         int fileCounterDebug = directoryClear(targetDebug);
 
-        if(fileCounterProd == -1 || fileCounterDebug == -1){
+        if (fileCounterProd == -1 || fileCounterDebug == -1)
+        {
             printf("[ERROR] : Function directoryClear was not able to clear the directory | clear \n");
             return;
         }

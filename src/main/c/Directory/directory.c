@@ -664,7 +664,7 @@ int directoryDelete(char *directoryPath)
 
 int directoryGetExecutablePath(char *dest)
 {
-    cchar path[MAX_LENGTH_PATH];
+    char path[MAX_LENGTH_PATH];
     uint32_t size = sizeof(path);
     if (_NSGetExecutablePath(path, &size) != 0)
     {

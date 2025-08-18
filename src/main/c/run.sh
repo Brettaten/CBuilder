@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Output executable name (default: a.out)
-OUTPUT=${1:-a.out}
+OUTPUT=${1:-cbuilder.out}
 
 # Find all .c files recursively
 C_FILES=$(find . -type f -name "*.c")
