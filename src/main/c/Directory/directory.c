@@ -680,7 +680,19 @@ int directoryGetExecutablePath(char *dest)
 void directoryNormalizePath(char *dest, char *src)
 {
     char absPath[MAX_LENGTH_PATH];
-    realpath(src, absPath);
+    char cwd[MAX_LENGTH_PATH];
+
+    if (src[0] != '/')
+    {
+        getcwd(cwd, sizeof(cwd));
+        strcat(cwd, "/");
+        strcat(cwd, src);
+    }
+    else
+    {
+        strcpy(cwd, src);
+    }
+    realpath(cwd, absPath);
 
     int length = strlen(absPath);
 
