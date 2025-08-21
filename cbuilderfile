@@ -7,5 +7,5 @@ debug {
 }
 
 link {
-    cmd: "gcc $OBJFILES -o $BINPATH/cbuilder.out"
+    cmd: "gcc $OBJFILES -o $BINPATH/cbuilder"
 }
