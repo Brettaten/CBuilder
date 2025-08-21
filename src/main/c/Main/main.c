@@ -216,6 +216,8 @@ void printHelpGeneral()
     printf(SEPERATOR);
     printf(HEADING, "C O M M A N D S");
     printf(LINE, "create", "creates the project structure and the cbuilder file");
+    printf(LINE, "build", "compiles and links the project to create an executable");
+    printf(LINE, "clear", "deletes all files and directories in target/prod and target/debug");
     printf(SEPERATOR);
     printf(HEADING, "A R G U M E N T S");
     printf(LINE, "-v", "displays the version of cbuilder on this machine");
