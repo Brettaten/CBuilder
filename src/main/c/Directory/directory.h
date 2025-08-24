@@ -257,7 +257,7 @@ bool fileCreate(char *path, char *fileName);
  * 
  * @return Success: true | Failure: false
  */
-bool fileCopy(char *destPath, char *destName, char *srcPath, char *srcName);
+bool fileCopy(char *destPath, char *srcPath);
 
 #endif
 

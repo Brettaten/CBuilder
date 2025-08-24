@@ -11,6 +11,7 @@
 #include "../Util/Stack/stack.h"
 #include "../Util/String/string.h"
 #include "../Directory/directory.h"
+#include "../Test/test.h"
 
 /**
  * Functionn that checks if a character c is in the passed array
@@ -177,6 +178,46 @@ int main(int argc, char *argv[])
         clear(path);
     }
 
+    else if (strcmp(mainCMD, "test_build") == 0)
+    {
+        char path[MAX_LENGTH_PATH] = ".";
+
+        for (int i = 2; i < argc; i++)
+        {
+            if (strcmp(argv[i], "-h") == 0)
+            {
+                if (argc != 3)
+                {
+                    printInvalidCMD();
+                    return -1;
+                }
+                else
+                {
+                    printHelpTestBuild();
+                    return 0;
+                }
+            }
+
+            else if (strcmp(argv[i], "-p") == 0)
+            {
+                if (argc <= i + 1)
+                {
+                    printInvalidCMD();
+                    return -1;
+                }
+                strcpy(path, argv[i + 1]);
+                i++;
+            }
+
+            else
+            {
+                printInvalidCMD();
+                return -1;
+            }
+        }
+        testBuild(path);
+    }
+
     else if (strcmp(mainCMD, "-h") == 0)
     {
         if (argv[argc - 1] != mainCMD)
@@ -279,6 +320,10 @@ void printHelpClear()
     printf(SEPERATOR);
 }
 
+void printHelpTestBuild()
+{
+}
+
 void printInvalidCMD()
 {
     printf(SEPERATOR);
@@ -350,7 +395,15 @@ void create(char *path)
             printf("[ERROR] : CBuilderfile template was not found | create");
         }
 
-        if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile") || !fileCopy(path, "cbuilderfile", directoryGetPath(ressource), entryGetName(template)))
+        char pathBuilderfileDest[MAX_LENGTH_PATH];
+        strcpy(pathBuilderfileDest, path);
+        strcpy(pathBuilderfileDest, "/cbuilderfile");
+
+        char pathBuilderfileSrc[MAX_LENGTH_PATH];
+        strcpy(pathBuilderfileSrc, directoryGetPath(ressource));
+        strcat(pathBuilderfileSrc, entryGetName(template));
+
+        if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile") || !fileCopy(pathBuilderfileDest, pathBuilderfileSrc))
         {
             printf("[ERROR] : Something went wrong during project creation | create \n");
             return;
@@ -538,6 +591,12 @@ void build(char *path, bool debug)
             {
                 Entry *tempEntrySrc = directoryGetEntryAt(tempSrc, i);
 
+                if (tempEntrySrc == NULL)
+                {
+                    printf("[ERROR] : Function directoryGetEntryAt failed | build \n");
+                    return;
+                }
+
                 String *cPath = stringCreate(entryGetPath(tempEntrySrc));
                 String *name = utilGetName(entryGetName(tempEntrySrc));
                 String *type = utilGetEx(entryGetName(tempEntrySrc));
@@ -548,12 +607,6 @@ void build(char *path, bool debug)
                 stringCat(objPath, slash);
                 stringCat(objPath, name);
                 stringCat(objPath, objType);
-
-                if (tempEntrySrc == NULL)
-                {
-                    printf("[ERROR] : Function directoryGetEntryAt failed | build \n");
-                    return;
-                }
 
                 if (entryGetType(tempEntrySrc) == TYPE_DIRECTORY)
                 {
@@ -780,6 +833,167 @@ void clear(char *path)
         printf(LINE, "Files deleted in prod:", fileCounterProdC);
         printf(LINE, "Files deleted in debug:", fileCounterDebugC);
         printf(SEPERATOR);
+    }
+    else
+    {
+        printf(SEPERATOR);
+        printf(HEADING, "E R R O R");
+        printf(LINE, "No CBuilder project was found at:", projectPath);
+        printf(SEPERATOR);
+        return;
+    }
+}
+
+void testBuild(char *path)
+{
+    char projectPath[MAX_LENGTH_PATH];
+    bool project = false;
+
+    int st1 = findProject(path, projectPath);
+
+    if (st1 == -1)
+    {
+        directoryNormalizePath(projectPath, path);
+        project = false;
+    }
+    else
+    {
+        project = true;
+    }
+
+    if (project)
+    {
+        char srcPath[MAX_LENGTH_PATH];
+        char destPath[MAX_LENGTH_PATH];
+        strcpy(srcPath, projectPath);
+        strcpy(destPath, projectPath);
+        strcat(srcPath, "/src/main/c");
+        strcat(srcPath, "/src/test/src/project");
+
+        Directory *srcDir = directoryGet(srcPath);
+        Directory *destDir = directoryGet(destPath);
+
+        if (srcDir == NULL || destDir == NULL)
+        {
+            printf("[ERROR] : Directory could not be found | testBuild \n");
+            return;
+        }
+
+        Stack *stackSrc = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
+        Stack *stackDest = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
+
+        if (stackSrc == NULL || stackDest == NULL)
+        {
+            printf("[ERROR] : function stackCreate failed | testBuild \n");
+            return;
+        }
+
+        stackPush(stackSrc, srcDir);
+        stackPush(stackDest, destDir);
+
+        directoryFree(srcDir);
+        directoryClear(destDir);
+
+        String *cExt = stringCreate(".c");
+
+        while (stackLength(stackSrc) < 0)
+        {
+
+            Directory *tempDirSrc = stackPop(stackSrc);
+            Directory *tempDirDest = stackPop(stackDest);
+
+            if (tempDirSrc == NULL || tempDirDest == NULL)
+            {
+                printf("[ERROR] : Function stackPop failed | testBuild \n");
+                return;
+            }
+
+            for (int i = 0; i < directoryGetEntryAmount(tempDirSrc); i++)
+            {
+
+                Entry *entry = directoryGetEntryAt(tempDirSrc, i);
+
+                if (entry == NULL)
+                {
+                    printf("[ERROR] : function directoryGetEntryAt failed | testBuild \n");
+                    return;
+                }
+
+                if (entryGetType == TYPE_DIRECTORY)
+                {
+
+                    Directory *newSrc = directoryGet(entryGetPath(entry));
+
+                    if (newSrc == NULL)
+                    {
+                        printf("[ERROR] : function directoryGet failed | testBuild \n");
+                        return;
+                    }
+
+                    bool st1 = directoryCreate(directoryGetPath(tempDirDest), entryGetName(entry));
+
+                    if (st1 == false)
+                    {
+                        printf("[ERROR] : Function directoryCreate failed | build \n");
+                        return;
+                    }
+
+                    char temp[MAX_LENGTH_PATH];
+                    strcpy(temp, directoryGetPath(tempDirDest));
+                    strcat(temp, "/");
+                    strcat(temp, entryGetName(entry));
+
+                    Directory *newDest = directoryGet(temp);
+
+                    if (newDest == NULL)
+                    {
+                        printf("[ERROR] : Function directoryGet failed | build \n");
+                        return;
+                    }
+
+                    stackPush(stackSrc, newSrc);
+                    stackPush(stackDest, newDest);
+
+                    directoryFree(newSrc);
+                    directoryFree(newDest);
+                }
+
+                else
+                {
+
+                    String *extension = utilGetEx(entryGetName(entry));
+                    String *name = utilGetEx(entryGetName(entry));
+
+                    if (stringEquals(extension, cExt))
+                    {
+                    }
+                    else
+                    {
+                        char dest[MAX_LENGTH_PATH];
+                        strcpy(dest, directoryGetPath(tempDirDest));
+                        strcat(dest, entryGetName(entry));
+
+                        bool st2 = fileCopy(dest, entryGetPath(entry));
+
+                        if(st2 == false){
+                            printf("[ERROR] : function fileCopy failed | testBuild \n");
+                            return;
+                        }
+                    }
+
+                    stringFree(extension);
+                    stringFree(name);
+                }
+
+                entryFree(entry);
+            }
+            directoryFree(tempDirSrc);
+            directoryFree(tempDirDest);
+        }
+        stringFree(cExt);
+
+        stackFree(stackSrc);
+        stackFree(stackDest);
     }
     else
     {

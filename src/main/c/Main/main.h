@@ -24,9 +24,14 @@ void printHelpCreate();
 void printHelpBuild();
 
 /**
- * Function used to display information about the command execute
+ * Function used to display information about the command clear
  */
 void printHelpClear();
+
+/**
+ * Function used to display information about the command test_build
+ */
+void printHelpTestBuild();
 
 /**
  * Function that displays some help after the user entered a wrong command
@@ -66,11 +71,11 @@ void build(char *path, bool debug);
 void clear(char *path);
 
 /**
- * Function that executes the cbuilder create -p command
+ * Function that executes the cbuilder test_build -p command
  * 
- * @param path The path were the cbuilder project should be created
+ * @param path The path were cbuilder should look for a project
  */
-void create(char *path);
+void testBuild(char *path);
 
 /**
  * Function used to get a command from the cbuilderfile

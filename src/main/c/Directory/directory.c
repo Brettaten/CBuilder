@@ -1205,17 +1205,13 @@ bool fileCreate(char *path, char *fileName)
     return true;
 }
 
-bool fileCopy(char *destPath, char *destName, char *srcPath, char *srcName)
+bool fileCopy(char *destPath, char *srcPath)
 {
     char absPathDest[MAX_LENGTH_NAME];
     directoryNormalizePath(absPathDest, destPath);
-    strcat(absPathDest, "/");
-    strcat(absPathDest, destName);
 
     char absPathSrc[MAX_LENGTH_NAME];
     directoryNormalizePath(absPathSrc, srcPath);
-    strcat(absPathSrc, "/");
-    strcat(absPathSrc, srcName);
 
     FILE *dest = fopen(absPathDest, "w");
     FILE *src = fopen(absPathSrc, "r");
