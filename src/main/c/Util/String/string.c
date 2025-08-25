@@ -561,7 +561,7 @@ int stringLength(String *pString)
     return listLength(pString->list);
 }
 
-int stringSize(String *pString)
+int stringContentSize(String *pString)
 {
     if (pString == NULL)
     {
@@ -570,6 +570,11 @@ int stringSize(String *pString)
     }
 
     return listSize(pString->list);
+}
+
+int stringSize()
+{
+    return sizeof(String);
 }
 
 void stringFree(void *pString)

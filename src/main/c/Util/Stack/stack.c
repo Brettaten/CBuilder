@@ -157,7 +157,7 @@ int stackLength(Stack *pStack)
     return doublyLinkedListLength(pStack->list);
 }
 
-int stackSize(Stack *pStack)
+int stackContentSize(Stack *pStack)
 {
     if (pStack == NULL)
     {
@@ -166,6 +166,10 @@ int stackSize(Stack *pStack)
     }
 
     return doublyLinkedListSize(pStack->list);
+}
+
+int stackSize(){
+    return sizeof(Stack);
 }
 
 void stackFree(void *pStack)

@@ -525,7 +525,7 @@ int doublyLinkedListLength(DoublyLinkedList *pList)
     return pList->length;
 }
 
-int doublyLinkedListSize(DoublyLinkedList *pList)
+int doublyLinkedListContentSize(DoublyLinkedList *pList)
 {
     if (pList == NULL)
     {
@@ -534,6 +534,10 @@ int doublyLinkedListSize(DoublyLinkedList *pList)
     }
 
     return pList->size;
+}
+
+int doublyLinkedListSize(){
+    return sizeof(DoublyLinkedList);
 }
 
 DoublyLinkedListNode *doublyLinkedListGetHead(DoublyLinkedList *pList)

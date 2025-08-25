@@ -81,7 +81,14 @@ int stackLength(Stack *pStack);
  * 
  * @return Success: the size | Failure: -1
  */
-int stackSize(Stack *pStack);
+int stackContentSize(Stack *pStack);
+
+/**
+ * Function that returns the size of a stack struct
+ * 
+ * @return Success: the size
+ */
+int stackSize();
 
 /**
  * Function used to free the passed stack

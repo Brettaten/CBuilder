@@ -131,7 +131,14 @@ int listLength(List *pList);
  *
  * @return Success: size | Failure: -1
  */
-int listSize(List *pList);
+int listContentSize(List *pList);
+
+/**
+ * Function used to return the size of the a list struct
+ *
+ * @return Success: size
+ */
+int listSize();
 
 /**
  * Function used to free the passed list

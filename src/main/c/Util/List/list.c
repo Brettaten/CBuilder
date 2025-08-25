@@ -422,7 +422,7 @@ int listLength(List *pList)
     return pList->length;
 }
 
-int listSize(List *pList)
+int listContentSize(List *pList)
 {
     if (pList == NULL)
     {
@@ -431,6 +431,10 @@ int listSize(List *pList)
     }
 
     return pList->size;
+}
+
+int listSize(){
+    return sizeof(List);
 }
 
 bool isIndexInBoundsList(List *pList, int index)

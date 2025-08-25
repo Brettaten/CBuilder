@@ -114,8 +114,14 @@ int doublyLinkedListLength(DoublyLinkedList *pList);
  *
  * @return Success: size | Failure: -1
  */
-int doublyLinkedListSize(DoublyLinkedList *pList);
+int doublyLinkedListContentSize(DoublyLinkedList *pList);
 
+/**
+ * Function used to return the size of a doubly linked list struct
+ *
+ * @return Success: size
+ */
+int doublyLinkedListSize();
 /**
  * Function used to return the head of the list
  *

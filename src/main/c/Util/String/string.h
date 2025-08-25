@@ -179,7 +179,14 @@ int stringLength(String *pString);
  * 
  * @return Success: the size | Failure: -1
  */
-int stringSize(String *pString);
+int stringContentSize(String *pString);
+
+/**
+ * Function that returns the size of a string struct
+ * 
+ * @return Success: the size
+ */
+int stringSize();
 
 /**
  * Function used to free the passed string
