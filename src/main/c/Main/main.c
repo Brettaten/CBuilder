@@ -25,15 +25,6 @@
 bool utilIsInArray(char *arr, int length, int c);
 
 /**
- * Function that strips the file ending and returns the file name as a string
- *
- * @param name the file name with file extension
- *
- * @return Success: the file name without extension | Failure: NULL
- */
-String *utilGetName(char *name);
-
-/**
  * Function that strips the file name and returns the file extension as a string
  *
  * @param name the file name with file extension
@@ -868,7 +859,7 @@ void testBuild(char *path)
         strcpy(srcPath, projectPath);
         strcpy(destPath, projectPath);
         strcat(srcPath, "/src/main/c");
-        strcat(srcPath, "/src/test/src/project");
+        strcat(destPath, "/src/test/src/project");
 
         Directory *srcDir = directoryGet(srcPath);
         Directory *destDir = directoryGet(destPath);
@@ -892,11 +883,11 @@ void testBuild(char *path)
         stackPush(stackDest, destDir);
 
         directoryFree(srcDir);
-        directoryClear(destDir);
+        directoryFree(destDir);
 
         String *cExt = stringCreate(".c");
 
-        while (stackLength(stackSrc) < 0)
+        while (stackLength(stackSrc) > 0)
         {
 
             Directory *tempDirSrc = stackPop(stackSrc);
@@ -919,7 +910,7 @@ void testBuild(char *path)
                     return;
                 }
 
-                if (entryGetType == TYPE_DIRECTORY)
+                if (entryGetType(entrySrc) == TYPE_DIRECTORY)
                 {
 
                     Directory *newSrc = directoryGet(entryGetPath(entrySrc));
@@ -962,9 +953,9 @@ void testBuild(char *path)
                 {
 
                     String *extension = utilGetEx(entryGetName(entrySrc));
-                    String *name = utilGetEx(entryGetName(entrySrc));
+                    String *name = utilGetName(entryGetName(entrySrc));
 
-                    Entry *entryDest = directoryGetEntry(directoryGetPath(tempDirDest), entryGetName(entrySrc), TYPE_FILE);
+                    Entry *entryDest = directoryGetEntry(tempDirDest, entryGetName(entrySrc), TYPE_FILE);
 
                     if (stringEquals(extension, cExt))
                     {
@@ -974,8 +965,9 @@ void testBuild(char *path)
                             Entry *tempEntryDest = directoryGetEntryAt(tempDirDest, i);
                             String *tempName = stringCreate(entryGetName(tempEntryDest));
                             String *subName = stringSub(name, 0, stringLength(name) - 1);
+                            String *tempEx = utilGetEx(stringToArr(tempName));
 
-                            if (stringEquals(subName, name))
+                            if (stringEquals(subName, name) && stringEquals(tempEx, cExt))
                             {
                                 if (delete == 0)
                                 {
@@ -987,6 +979,7 @@ void testBuild(char *path)
                                     entryFree(tempEntryDest);
                                     stringFree(tempName);
                                     stringFree(subName);
+                                    stringFree(tempEx);
                                     break;
                                 }
                                 else
@@ -999,12 +992,15 @@ void testBuild(char *path)
                             entryFree(tempEntryDest);
                             stringFree(tempName);
                             stringFree(subName);
+                            stringFree(tempEx);
                         }
 
-                        if(delete == 2 || delete == 0){
+                        if (delete == 2 || delete == 0)
+                        {
                             int st3 = splitFile(entrySrc, tempDirDest);
 
-                            if(st3 == 1){
+                            if (st3 == 1)
+                            {
                                 printf("[ERROR] : Function splitFile failed | testBuild \n");
                                 return;
                             }
@@ -1014,6 +1010,7 @@ void testBuild(char *path)
                     {
                         char dest[MAX_LENGTH_PATH];
                         strcpy(dest, directoryGetPath(tempDirDest));
+                        strcat(dest, "/");
                         strcat(dest, entryGetName(entrySrc));
 
                         bool st2 = fileCopy(dest, entryGetPath(entrySrc));
@@ -1027,7 +1024,10 @@ void testBuild(char *path)
 
                     stringFree(extension);
                     stringFree(name);
-                    entryFree(entryDest);
+                    if (entryDest != NULL)
+                    {
+                        entryFree(entryDest);
+                    }
                 }
 
                 entryFree(entrySrc);
