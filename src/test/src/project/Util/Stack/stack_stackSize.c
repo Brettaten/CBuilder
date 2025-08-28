@@ -26,6 +26,7 @@ typedef struct Stack
 
 
 
+
 int stackSize(){
     return sizeof(Stack);
 }

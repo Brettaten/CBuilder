@@ -10,6 +10,7 @@ typedef struct String
     List *list;
 } String;
 
+
 /**
  * Function used determine whether an index is in bounds
  *
@@ -18,7 +19,9 @@ typedef struct String
  *
  * @return true or false
  */
+
 bool isIndexInBoundsString(String *pString, int index);
+
 
 String *stringCreate(char *string)
 {

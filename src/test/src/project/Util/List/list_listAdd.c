@@ -15,6 +15,7 @@ typedef struct List
     void (*freeElement)(void *);
 } List;
 
+
 /**
  * Function used determine whether an index is in bounds
  *
@@ -23,7 +24,9 @@ typedef struct List
  *
  * @return true or false
  */
+
 bool isIndexInBoundsList(List *pList, int index);
+
 
 
 

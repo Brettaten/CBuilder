@@ -12,6 +12,7 @@ typedef struct Stack
     void (*freeElement)(void *);
 } Stack;
 
+
 Stack *stackCreate(int size, void *(*copyElement)(void *), void (*freeElement)(void *))
 {
     Stack *pStack = (Stack *)malloc(sizeof(Stack));

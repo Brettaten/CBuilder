@@ -18,6 +18,7 @@ enum TYPE
     OTHER
 };
 
+
 /**
  * Function used to update the splited files by adding additional information
  *
@@ -26,7 +27,9 @@ enum TYPE
  *
  * @return Success: 0 | Failure: -1
  */
+
 int updateFiles(List *splitFiles, String *token);
+
 
 /**
  * Function used to get the name of a function
@@ -35,7 +38,9 @@ int updateFiles(List *splitFiles, String *token);
  *
  * @return Success: the name
  */
+
 String *getFunctionName(String *func);
+
 
 int splitFile(Entry *src, Directory *dest)
 {
@@ -135,6 +140,7 @@ int splitFile(Entry *src, Directory *dest)
                 if (c == '/')
                 {
                     stringAdd(token, c);
+                    stringAdd(token, '\n');
                     updateFiles(splitFiles, token);
                     stringCat(preSet, token);
                     stringClear(token);
@@ -149,6 +155,7 @@ int splitFile(Entry *src, Directory *dest)
 
             if (c == ';')
             {
+                stringAdd(token, '\n');
                 updateFiles(splitFiles, token);
                 stringCat(preSet, token);
                 stringClear(token);
@@ -186,6 +193,7 @@ int splitFile(Entry *src, Directory *dest)
 
                 if (funcCounter < 0)
                 {
+                    stringAdd(token, '\n');
                     String *tempFile = stringCreate(stringToArr(preSet));
                     stringCat(tempFile, token);
 
@@ -211,6 +219,8 @@ int splitFile(Entry *src, Directory *dest)
             }
             else if (c == ';' && funcCounter == -1)
             {
+                stringAdd(token, '\n');
+                updateFiles(splitFiles, token);
                 stringCat(preSet, token);
                 stringClear(token);
             }

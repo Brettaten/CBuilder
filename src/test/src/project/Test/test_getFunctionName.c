@@ -18,6 +18,7 @@ enum TYPE
     OTHER
 };
 
+
 /**
  * Function used to update the splited files by adding additional information
  *
@@ -26,7 +27,9 @@ enum TYPE
  *
  * @return Success: 0 | Failure: -1
  */
+
 int updateFiles(List *splitFiles, String *token);
+
 
 /**
  * Function used to get the name of a function
@@ -35,7 +38,9 @@ int updateFiles(List *splitFiles, String *token);
  *
  * @return Success: the name
  */
+
 String *getFunctionName(String *func);
+
 
 
 

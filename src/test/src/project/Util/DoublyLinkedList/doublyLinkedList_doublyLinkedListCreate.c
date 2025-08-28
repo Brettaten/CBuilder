@@ -13,7 +13,9 @@
  *
  * @return Success: pointer to a node | Failure: NULL
  */
+
 DoublyLinkedListNode *doublyLinkedListGetNode(DoublyLinkedList *pList, int index);
+
 
 /**
  * Function used determine whether an index is in bounds
@@ -23,7 +25,9 @@ DoublyLinkedListNode *doublyLinkedListGetNode(DoublyLinkedList *pList, int index
  *
  * @return true or false
  */
+
 bool isIndexInBoundsDoubly(DoublyLinkedList *pList, int index);
+
 
 /**
  * Function used to create a deep copy of a node
@@ -35,7 +39,9 @@ bool isIndexInBoundsDoubly(DoublyLinkedList *pList, int index);
  *
  * @note The value is deep copied while next is set to null
  */
+
 DoublyLinkedListNode *doublyLinkedListNodeCopy(DoublyLinkedList *pList, DoublyLinkedListNode *pNode);
+
 
 /**
  * Function used to free a node
@@ -44,7 +50,9 @@ DoublyLinkedListNode *doublyLinkedListNodeCopy(DoublyLinkedList *pList, DoublyLi
  *
  * @return NULL
  */
+
 void freeNode(DoublyLinkedList *pList, DoublyLinkedListNode *pNode);
+
 
 typedef struct DoublyLinkedList
 {
@@ -56,12 +64,14 @@ typedef struct DoublyLinkedList
     void (*freeElement)(void *);
 } DoublyLinkedList;
 
+
 typedef struct DoublyLinkedListNode
 {
     DoublyLinkedListNode *next;
     DoublyLinkedListNode *prev;
     void *value;
 } DoublyLinkedListNode;
+
 
 DoublyLinkedList *doublyLinkedListCreate(int size, void *(*copyElement)(void *), void (*freeElement)(void *))
 {

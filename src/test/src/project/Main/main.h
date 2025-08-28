@@ -108,6 +108,20 @@ bool isProject(Directory *dir);
 int findProject(char *path, char *dest);
 
 /**
+ * Function used to compile c Files in srcPath and put the obj files into destPath
+ * 
+ * @param destPath the dest path
+ * @param srcPath the src path
+ * @param projectPath the projectPath
+ * @param debug true if it should compile with debug information
+ * @param fileCounter the amount of c files
+ * @param alteredFiles the amount of compiled files
+ * 
+ * @return all object files concatenated in one string
+ */
+String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, int *fileCounter, int *alteredFiles);
+
+/**
  * Function used to get the ressource directory of this cbuilder project
  * 
  * @return Success: The directory | Failure: NULL

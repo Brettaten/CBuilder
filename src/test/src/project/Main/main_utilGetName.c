@@ -22,7 +22,9 @@
  *
  * @return true if c is in arr, false if c is not in arr
  */
+
 bool utilIsInArray(char *arr, int length, int c);
+
 
 /**
  * Function that strips the file name and returns the file extension as a string
@@ -31,7 +33,9 @@ bool utilIsInArray(char *arr, int length, int c);
  *
  * @return Success: the file extension without name | Failure: NULL
  */
+
 String *utilGetEx(char *name);
+
 
 
 

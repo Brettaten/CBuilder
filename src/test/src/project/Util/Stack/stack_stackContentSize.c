@@ -24,6 +24,7 @@ typedef struct Stack
 
 
 
+
 int stackContentSize(Stack *pStack)
 {
     if (pStack == NULL)

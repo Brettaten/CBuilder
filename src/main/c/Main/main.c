@@ -477,8 +477,6 @@ void build(char *path, bool debug)
 
         String *binDirPath = stringCreate(entryGetPath(bin));
 
-        entryFree(bin);
-
         Entry *builderFile = directoryGetEntry(dir, "cbuilderfile", TYPE_FILE);
 
         if (builderFile == NULL)
@@ -490,219 +488,33 @@ void build(char *path, bool debug)
         char builderFilePath[MAX_LENGTH_PATH];
         strcpy(builderFilePath, entryGetPath(builderFile));
 
-        String *systemCommand = stringCreate(NULL);
-        String *cFile = stringCreate("$CFILE");
-        String *objFile = stringCreate("$OBJFILE");
-
         char relTarget[MAX_LENGTH_PATH];
-
-        char command[64];
 
         if (debug)
         {
-            strcpy(command, "debug");
             strcpy(relTarget, "/target/debug");
         }
         else
         {
-            strcpy(command, "build");
             strcpy(relTarget, "/target/prod");
         }
-
-        getCommand(command, builderFilePath, systemCommand);
-
-        char *commandBluePrint = stringToArr(systemCommand);
-
-        char filePath[MAX_LENGTH_PATH];
-
-        directoryFree(dir);
-        entryFree(builderFile);
 
         char srcPath[MAX_LENGTH_PATH];
         strcpy(srcPath, projectPath);
         strcat(srcPath, "/src/main/c");
-        Directory *src = directoryGet(srcPath);
-
-        if (src == NULL)
-        {
-            printf("[ERROR] : The c directory of the project was not found | build \n");
-            return;
-        }
 
         char targetPath[MAX_LENGTH_PATH];
         strcpy(targetPath, projectPath);
         strcat(targetPath, relTarget);
-        Directory *target = directoryGet(targetPath);
-
-        if (target == NULL)
-        {
-            printf("[ERROR] : The %s directory of the project was not found | build \n", relTarget);
-            return;
-        }
-
-        Stack *stackSrc = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
-        Stack *stackTarget = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
-
-        if (stackSrc == NULL || stackTarget == NULL)
-        {
-            printf("[ERROR] : Function stackCreate failed | build \n");
-            return;
-        }
-
-        int st1 = stackPush(stackSrc, src);
-        int st2 = stackPush(stackTarget, target);
-
-        if (st1 == -1 || st2 == -1)
-        {
-            printf("[ERROR] : Function stackPush failed | build \n");
-            return;
-        }
-
-        String *oFileList = stringCreate(NULL);
-        String *delimiter = stringCreate(" ");
-
-        String *objType = stringCreate(".o");
-        String *cType = stringCreate(".c");
 
         int fileCounter = 0;
-        int alteredFileCounter = 0;
+        int alteredFiles = 0;
 
-        while (stackLength(stackSrc) > 0)
-        {
-            Directory *tempSrc = stackPop(stackSrc);
-            Directory *tempTarget = stackPop(stackTarget);
+        String *oFileList = compile(targetPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
 
-            if (tempSrc == NULL || tempTarget == NULL)
-            {
-                printf("[ERROR] : Function stackPop failed | build \n");
-                return;
-            }
-
-            for (int i = 0; i < directoryGetEntryAmount(tempSrc); i++)
-            {
-                Entry *tempEntrySrc = directoryGetEntryAt(tempSrc, i);
-
-                if (tempEntrySrc == NULL)
-                {
-                    printf("[ERROR] : Function directoryGetEntryAt failed | build \n");
-                    return;
-                }
-
-                String *cPath = stringCreate(entryGetPath(tempEntrySrc));
-                String *name = utilGetName(entryGetName(tempEntrySrc));
-                String *type = utilGetEx(entryGetName(tempEntrySrc));
-                String *objPath = stringCreate(directoryGetPath(tempTarget));
-                String *objName = stringCopy(name);
-                stringCat(objName, objType);
-                String *slash = stringCreate("/");
-                stringCat(objPath, slash);
-                stringCat(objPath, name);
-                stringCat(objPath, objType);
-
-                if (entryGetType(tempEntrySrc) == TYPE_DIRECTORY)
-                {
-                    Directory *newDirSrc = directoryGet(entryGetPath(tempEntrySrc));
-
-                    if (newDirSrc == NULL)
-                    {
-                        printf("[ERROR] : Function directoryGet failed | build \n");
-                        return;
-                    }
-
-                    bool st3 = directoryCreate(directoryGetPath(tempTarget), entryGetName(tempEntrySrc));
-
-                    if (st3 == false)
-                    {
-                        printf("[ERROR] : Function directoryCreate failed | build \n");
-                        return;
-                    }
-
-                    char temp[MAX_LENGTH_PATH];
-                    strcpy(temp, directoryGetPath(tempTarget));
-                    strcat(temp, "/");
-                    strcat(temp, entryGetName(tempEntrySrc));
-
-                    Directory *newDirTarget = directoryGet(temp);
-
-                    if (newDirTarget == NULL)
-                    {
-                        printf("[ERROR] : Function directoryGet failed | build \n");
-                        return;
-                    }
-
-                    stackPush(stackSrc, newDirSrc);
-                    stackPush(stackTarget, newDirTarget);
-
-                    directoryFree(newDirSrc);
-                    directoryFree(newDirTarget);
-                }
-
-                else if (stringEquals(type, cType))
-                {
-                    fileCounter++;
-
-                    char *tempObjName = stringToArr(objName);
-                    Entry *tempEntryTarget = directoryGetEntry(tempTarget, tempObjName, TYPE_FILE);
-                    free(tempObjName);
-
-                    stringReplace(systemCommand, cFile, cPath);
-                    stringReplace(systemCommand, objFile, objPath);
-
-                    if (tempEntryTarget != NULL && entryGetLastModified(tempEntryTarget) < entryGetLastModified(tempEntrySrc))
-                    {
-                        alteredFileCounter++;
-
-                        int st4 = remove(entryGetPath(tempEntryTarget));
-
-                        if (st4 != 0)
-                        {
-                            printf("[ERROR] : Function remove failed | build \n");
-                            return;
-                        }
-                        char *tempCmd = stringToArr(systemCommand);
-                        system(tempCmd);
-                        free(tempCmd);
-                    }
-                    else if (tempEntryTarget == NULL)
-                    {
-                        alteredFileCounter++;
-
-                        char *tempCmd = stringToArr(systemCommand);
-                        system(tempCmd);
-                        free(tempCmd);
-                    }
-
-                    if (tempEntryTarget != NULL)
-                    {
-                        entryFree(tempEntryTarget);
-                    }
-                    stringFree(systemCommand);
-                    systemCommand = stringCreate(commandBluePrint);
-
-                    stringCat(oFileList, objPath);
-                    stringCat(oFileList, delimiter);
-                }
-
-                entryFree(tempEntrySrc);
-                stringFree(cPath);
-                stringFree(objPath);
-                stringFree(objName);
-                stringFree(type);
-                stringFree(name);
-                stringFree(slash);
-            }
-            directoryFree(tempSrc);
-            directoryFree(tempTarget);
-        }
-        stackFree(stackSrc);
-        stackFree(stackTarget);
-        stringFree(systemCommand);
-        stringFree(cFile);
-        stringFree(objFile);
-        stringFree(objType);
-        stringFree(cType);
-        stringFree(delimiter);
-        free(commandBluePrint);
+        directoryFree(dir);
+        entryFree(bin);
+        entryFree(builderFile);
 
         char linkCommand[] = "link";
         String *linkSystemCommand = stringCreate(NULL);
@@ -741,7 +553,7 @@ void build(char *path, bool debug)
         char fileCounterC[16];
         char alteredFileCounterC[16];
         sprintf(fileCounterC, "%d", fileCounter);
-        sprintf(alteredFileCounterC, "%d", alteredFileCounter);
+        sprintf(alteredFileCounterC, "%d", alteredFiles);
 
         printf(SEPERATOR);
         printf(HEADING, "S U C C E S S");
@@ -1039,6 +851,15 @@ void testBuild(char *path)
 
         stackFree(stackSrc);
         stackFree(stackDest);
+
+        strcpy(srcPath, destPath);
+        strcpy(destPath, projectPath);
+        strcat(destPath, "/src/test/target/project");
+
+        int fileCounter = 0;
+        int alteredFiles = 0;
+
+        String *oFileList = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
     }
     else
     {
@@ -1463,4 +1284,238 @@ String *utilGetEx(char *name)
     }
 
     return str;
+}
+
+String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, int *fileCounter, int *alteredFiles)
+{
+    Directory *dir = directoryGet(projectPath);
+
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Directory for the specified path was not found | build \n");
+        return NULL;
+    }
+
+    Entry *builderFile = directoryGetEntry(dir, "cbuilderfile", TYPE_FILE);
+
+    if (builderFile == NULL)
+    {
+        printf("[ERROR] : Entry for the specified directory was not found | build \n");
+        return NULL;
+    }
+
+    char builderFilePath[MAX_LENGTH_PATH];
+    strcpy(builderFilePath, entryGetPath(builderFile));
+
+    String *systemCommand = stringCreate(NULL);
+    String *cFile = stringCreate("$CFILE");
+    String *objFile = stringCreate("$OBJFILE");
+
+    char relTarget[MAX_LENGTH_PATH];
+
+    char command[64];
+
+    if (debug)
+    {
+        strcpy(command, "debug");
+    }
+    else
+    {
+        strcpy(command, "build");
+    }
+
+    getCommand(command, builderFilePath, systemCommand);
+
+    char *commandBluePrint = stringToArr(systemCommand);
+
+    directoryFree(dir);
+    entryFree(builderFile);
+
+    Directory *src = directoryGet(srcPath);
+
+    if (src == NULL)
+    {
+        printf("[ERROR] : The c directory of the project was not found | build \n");
+        return NULL;
+    }
+
+    Directory *target = directoryGet(destPath);
+
+    if (target == NULL)
+    {
+        printf("[ERROR] : The %s directory of the project was not found | build \n", relTarget);
+        return NULL;
+    }
+
+    Stack *stackSrc = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
+    Stack *stackTarget = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
+
+    if (stackSrc == NULL || stackTarget == NULL)
+    {
+        printf("[ERROR] : Function stackCreate failed | build \n");
+        return NULL;
+    }
+
+    int st1 = stackPush(stackSrc, src);
+    int st2 = stackPush(stackTarget, target);
+
+    if (st1 == -1 || st2 == -1)
+    {
+        printf("[ERROR] : Function stackPush failed | build \n");
+        return NULL;
+    }
+
+    *fileCounter = 0;
+    *alteredFiles = 0;
+
+    String *oFileList = stringCreate(NULL);
+    String *delimiter = stringCreate(" ");
+
+    String *objType = stringCreate(".o");
+    String *cType = stringCreate(".c");
+
+    while (stackLength(stackSrc) > 0)
+    {
+        Directory *tempSrc = stackPop(stackSrc);
+        Directory *tempTarget = stackPop(stackTarget);
+
+        if (tempSrc == NULL || tempTarget == NULL)
+        {
+            printf("[ERROR] : Function stackPop failed | build \n");
+            return NULL;
+        }
+
+        for (int i = 0; i < directoryGetEntryAmount(tempSrc); i++)
+        {
+            Entry *tempEntrySrc = directoryGetEntryAt(tempSrc, i);
+
+            if (tempEntrySrc == NULL)
+            {
+                printf("[ERROR] : Function directoryGetEntryAt failed | build \n");
+                return NULL;
+            }
+
+            String *cPath = stringCreate(entryGetPath(tempEntrySrc));
+            String *name = utilGetName(entryGetName(tempEntrySrc));
+            String *type = utilGetEx(entryGetName(tempEntrySrc));
+            String *objPath = stringCreate(directoryGetPath(tempTarget));
+            String *objName = stringCopy(name);
+            stringCat(objName, objType);
+            String *slash = stringCreate("/");
+            stringCat(objPath, slash);
+            stringCat(objPath, name);
+            stringCat(objPath, objType);
+
+            if (entryGetType(tempEntrySrc) == TYPE_DIRECTORY)
+            {
+                Directory *newDirSrc = directoryGet(entryGetPath(tempEntrySrc));
+
+                if (newDirSrc == NULL)
+                {
+                    printf("[ERROR] : Function directoryGet failed | build \n");
+                    return NULL;
+                }
+
+                bool st3 = directoryCreate(directoryGetPath(tempTarget), entryGetName(tempEntrySrc));
+
+                if (st3 == false)
+                {
+                    printf("[ERROR] : Function directoryCreate failed | build \n");
+                    return NULL;
+                }
+
+                char temp[MAX_LENGTH_PATH];
+                strcpy(temp, directoryGetPath(tempTarget));
+                strcat(temp, "/");
+                strcat(temp, entryGetName(tempEntrySrc));
+
+                Directory *newDirTarget = directoryGet(temp);
+
+                if (newDirTarget == NULL)
+                {
+                    printf("[ERROR] : Function directoryGet failed | build \n");
+                    return NULL;
+                }
+
+                stackPush(stackSrc, newDirSrc);
+                stackPush(stackTarget, newDirTarget);
+
+                directoryFree(newDirSrc);
+                directoryFree(newDirTarget);
+            }
+
+            else if (stringEquals(type, cType))
+            {
+                (*fileCounter)++;
+
+                char *tempObjName = stringToArr(objName);
+                Entry *tempEntryTarget = directoryGetEntry(tempTarget, tempObjName, TYPE_FILE);
+                free(tempObjName);
+
+                stringReplace(systemCommand, cFile, cPath);
+                stringReplace(systemCommand, objFile, objPath);
+
+                if (tempEntryTarget != NULL && entryGetLastModified(tempEntryTarget) < entryGetLastModified(tempEntrySrc))
+                {
+                    (*alteredFiles)++;
+
+                    int st4 = remove(entryGetPath(tempEntryTarget));
+
+                    if (st4 != 0)
+                    {
+                        printf("[ERROR] : Function remove failed | build \n");
+                        return NULL;
+                    }
+                    char *tempCmd = stringToArr(systemCommand);
+                    system(tempCmd);
+                    free(tempCmd);
+                }
+                else if (tempEntryTarget == NULL)
+                {
+                    (*alteredFiles)++;
+
+                    char *tempCmd = stringToArr(systemCommand);
+                    system(tempCmd);
+                    free(tempCmd);
+                }
+
+                if (tempEntryTarget != NULL)
+                {
+                    entryFree(tempEntryTarget);
+                }
+                stringFree(systemCommand);
+                systemCommand = stringCreate(commandBluePrint);
+
+                stringCat(oFileList, objPath);
+                stringCat(oFileList, delimiter);
+            }
+
+            entryFree(tempEntrySrc);
+            stringFree(cPath);
+            stringFree(objPath);
+            stringFree(objName);
+            stringFree(type);
+            stringFree(name);
+            stringFree(slash);
+        }
+        directoryFree(tempSrc);
+        directoryFree(tempTarget);
+    }
+    stackFree(stackSrc);
+    stackFree(stackTarget);
+    stringFree(systemCommand);
+    stringFree(cFile);
+    stringFree(objFile);
+    stringFree(objType);
+    stringFree(cType);
+    stringFree(delimiter);
+    free(commandBluePrint);
+
+    int fileCounterTemp = *fileCounter;
+    int alteredFilesTemp = *alteredFiles;
+
+    memcpy(fileCounter, &fileCounterTemp, sizeof(int));
+    memcpy(alteredFiles, &alteredFilesTemp, sizeof(int));
+
+    return oFileList;
 }

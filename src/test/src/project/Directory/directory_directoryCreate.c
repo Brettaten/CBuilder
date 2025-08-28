@@ -18,6 +18,7 @@ typedef struct Directory
     Entry **entries;
 } Directory;
 
+
 typedef struct Entry
 {
     char path[MAX_LENGTH_PATH];
@@ -25,6 +26,7 @@ typedef struct Entry
     int type;
     time_t lastModified;
 } Entry;
+
 
 /**
  * Util function to get the amount of entries in a directory so that this number can
@@ -34,7 +36,9 @@ typedef struct Entry
  *
  * @return Success: the amount of entries in the passed dir | Failure: -1
  */
+
 int utilGetEntryAmount(char *path);
+
 
 #ifdef WIN
 
@@ -48,7 +52,9 @@ int utilGetEntryAmount(char *path);
  *
  * @return unix time
  */
+
 time_t utilFileTimeToUnix(FILETIME ft);
+
 
 
 
@@ -107,4 +113,5 @@ bool directoryCreate(char *directoryPath, char *directoryName)
     }
 
     return true;
-}#endif
+}
+#endif

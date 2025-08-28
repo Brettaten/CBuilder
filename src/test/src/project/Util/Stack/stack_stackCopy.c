@@ -20,6 +20,7 @@ typedef struct Stack
 
 
 
+
 void *stackCopy(void *pStack)
 {
     Stack *cp = (Stack *) pStack;
