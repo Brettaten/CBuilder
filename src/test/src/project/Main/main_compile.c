@@ -26,17 +26,6 @@
 bool utilIsInArray(char *arr, int length, int c);
 
 
-/**
- * Function that strips the file name and returns the file extension as a string
- *
- * @param name the file name with file extension
- *
- * @return Success: the file extension without name | Failure: NULL
- */
-
-String *utilGetEx(char *name);
-
-
 
 
 
@@ -291,6 +280,69 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
             stringFree(name);
             stringFree(slash);
         }
+
+        for (int i = 0; i < directoryGetEntryAmount(tempTarget); i++)
+        {
+            Entry *entryTarget = directoryGetEntryAt(tempTarget, i);
+            bool doesExist = false;
+
+            for (int j = 0; j < directoryGetEntryAmount(tempSrc); j++)
+            {
+                Entry *entrySrc = directoryGetEntryAt(tempSrc, j);
+
+                if (entryGetType(entryTarget) == entryGetType(entrySrc))
+                {
+                    if ((entryGetType(entryTarget) == TYPE_DIRECTORY) && (strcmp(entryGetName(entryTarget), entryGetName(entrySrc)) == 0))
+                    {
+                        entryFree(entrySrc);
+                        doesExist = true;
+                        break;
+                    }
+                    else if ((entryGetType(entryTarget) == TYPE_FILE))
+                    {
+                        String *targetName = utilGetName(entryGetName(entryTarget));
+                        String *targetEx = utilGetEx(entryGetName(entryTarget));
+                        String *srcName = utilGetName(entryGetName(entrySrc));
+                        String *srcEx = utilGetEx(entryGetName(entrySrc));
+
+                        if (stringEquals(targetName, srcName) && stringEquals(targetEx, objType) && stringEquals(srcEx, cType))
+                        {
+                            stringFree(targetName);
+                            stringFree(targetEx);
+                            stringFree(srcName);
+                            stringFree(srcEx);
+                            entryFree(entrySrc);
+                            doesExist = true;
+                            break;
+                        }
+                        stringFree(targetName);
+                        stringFree(targetEx);
+                        stringFree(srcName);
+                        stringFree(srcEx);
+                    }
+                }
+                entryFree(entrySrc);
+            }
+
+            if (!doesExist)
+            {
+                if (entryGetType(entryTarget) == TYPE_DIRECTORY)
+                {
+                    Directory *tempDir = directoryGetSub(tempTarget, entryGetName(entryTarget));
+                    directoryClear(tempDir);
+                    directoryDelete(directoryGetPath(tempDir));
+
+                    directoryFree(tempDir);
+                }
+                else
+                {
+                    remove(entryGetPath(entryTarget));
+                }
+            }
+
+            entryFree(entryTarget);
+        }
+
         directoryFree(tempSrc);
         directoryFree(tempTarget);
     }

@@ -24,15 +24,6 @@
  */
 bool utilIsInArray(char *arr, int length, int c);
 
-/**
- * Function that strips the file name and returns the file extension as a string
- *
- * @param name the file name with file extension
- *
- * @return Success: the file extension without name | Failure: NULL
- */
-String *utilGetEx(char *name);
-
 int main(int argc, char *argv[])
 {
 
@@ -673,184 +664,7 @@ void testBuild(char *path)
         strcat(srcPath, "/src/main/c");
         strcat(destPath, "/src/test/src/project");
 
-        Directory *srcDir = directoryGet(srcPath);
-        Directory *destDir = directoryGet(destPath);
-
-        if (srcDir == NULL || destDir == NULL)
-        {
-            printf("[ERROR] : Directory could not be found | testBuild \n");
-            return;
-        }
-
-        Stack *stackSrc = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
-        Stack *stackDest = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
-
-        if (stackSrc == NULL || stackDest == NULL)
-        {
-            printf("[ERROR] : function stackCreate failed | testBuild \n");
-            return;
-        }
-
-        stackPush(stackSrc, srcDir);
-        stackPush(stackDest, destDir);
-
-        directoryFree(srcDir);
-        directoryFree(destDir);
-
-        String *cExt = stringCreate(".c");
-
-        while (stackLength(stackSrc) > 0)
-        {
-
-            Directory *tempDirSrc = stackPop(stackSrc);
-            Directory *tempDirDest = stackPop(stackDest);
-
-            if (tempDirSrc == NULL || tempDirDest == NULL)
-            {
-                printf("[ERROR] : Function stackPop failed | testBuild \n");
-                return;
-            }
-
-            for (int i = 0; i < directoryGetEntryAmount(tempDirSrc); i++)
-            {
-
-                Entry *entrySrc = directoryGetEntryAt(tempDirSrc, i);
-
-                if (entrySrc == NULL)
-                {
-                    printf("[ERROR] : function directoryGetEntryAt failed | testBuild \n");
-                    return;
-                }
-
-                if (entryGetType(entrySrc) == TYPE_DIRECTORY)
-                {
-
-                    Directory *newSrc = directoryGet(entryGetPath(entrySrc));
-
-                    if (newSrc == NULL)
-                    {
-                        printf("[ERROR] : function directoryGet failed | testBuild \n");
-                        return;
-                    }
-
-                    bool st1 = directoryCreate(directoryGetPath(tempDirDest), entryGetName(entrySrc));
-
-                    if (st1 == false)
-                    {
-                        printf("[ERROR] : Function directoryCreate failed | build \n");
-                        return;
-                    }
-
-                    char temp[MAX_LENGTH_PATH];
-                    strcpy(temp, directoryGetPath(tempDirDest));
-                    strcat(temp, "/");
-                    strcat(temp, entryGetName(entrySrc));
-
-                    Directory *newDest = directoryGet(temp);
-
-                    if (newDest == NULL)
-                    {
-                        printf("[ERROR] : Function directoryGet failed | build \n");
-                        return;
-                    }
-
-                    stackPush(stackSrc, newSrc);
-                    stackPush(stackDest, newDest);
-
-                    directoryFree(newSrc);
-                    directoryFree(newDest);
-                }
-
-                else
-                {
-
-                    String *extension = utilGetEx(entryGetName(entrySrc));
-                    String *name = utilGetName(entryGetName(entrySrc));
-
-                    Entry *entryDest = directoryGetEntry(tempDirDest, entryGetName(entrySrc), TYPE_FILE);
-
-                    if (stringEquals(extension, cExt))
-                    {
-                        int delete = 2;
-                        for (int i = 0; i < directoryGetEntryAmount(tempDirDest); i++)
-                        {
-                            Entry *tempEntryDest = directoryGetEntryAt(tempDirDest, i);
-                            String *tempName = stringCreate(entryGetName(tempEntryDest));
-                            String *subName = stringSub(name, 0, stringLength(name) - 1);
-                            String *tempEx = utilGetEx(stringToArr(tempName));
-
-                            if (stringEquals(subName, name) && stringEquals(tempEx, cExt))
-                            {
-                                if (delete == 0)
-                                {
-                                    remove(entryGetPath(tempEntryDest));
-                                }
-                                else if (entryGetLastModified(tempEntryDest) > entryGetLastModified(entrySrc))
-                                {
-                                    delete = 1;
-                                    entryFree(tempEntryDest);
-                                    stringFree(tempName);
-                                    stringFree(subName);
-                                    stringFree(tempEx);
-                                    break;
-                                }
-                                else
-                                {
-                                    delete = 0;
-                                    remove(entryGetPath(tempEntryDest));
-                                }
-                            }
-
-                            entryFree(tempEntryDest);
-                            stringFree(tempName);
-                            stringFree(subName);
-                            stringFree(tempEx);
-                        }
-
-                        if (delete == 2 || delete == 0)
-                        {
-                            int st3 = splitFile(entrySrc, tempDirDest);
-
-                            if (st3 == 1)
-                            {
-                                printf("[ERROR] : Function splitFile failed | testBuild \n");
-                                return;
-                            }
-                        }
-                    }
-                    else if (entryDest == NULL || entryGetLastModified(entryDest) < entryGetLastModified(entrySrc))
-                    {
-                        char dest[MAX_LENGTH_PATH];
-                        strcpy(dest, directoryGetPath(tempDirDest));
-                        strcat(dest, "/");
-                        strcat(dest, entryGetName(entrySrc));
-
-                        bool st2 = fileCopy(dest, entryGetPath(entrySrc));
-
-                        if (st2 == false)
-                        {
-                            printf("[ERROR] : function fileCopy failed | testBuild \n");
-                            return;
-                        }
-                    }
-
-                    stringFree(extension);
-                    stringFree(name);
-                    if (entryDest != NULL)
-                    {
-                        entryFree(entryDest);
-                    }
-                }
-
-                entryFree(entrySrc);
-            }
-            directoryFree(tempDirSrc);
-            directoryFree(tempDirDest);
-        }
-        stringFree(cExt);
-
-        stackFree(stackSrc);
-        stackFree(stackDest);
+        copyProject(destPath, srcPath);
 
         strcpy(srcPath, destPath);
         strcpy(destPath, projectPath);
@@ -860,6 +674,13 @@ void testBuild(char *path)
         int alteredFiles = 0;
 
         String *oFileList = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+
+        strcpy(srcPath, projectPath);
+        strcpy(destPath, projectPath);
+        strcat(srcPath, "/src/test/src/main/c");
+        strcat(destPath, "/src/test/src/main/genTests");
+
+        //generateTests(destPath, srcPath);
     }
     else
     {
@@ -1498,6 +1319,69 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
             stringFree(name);
             stringFree(slash);
         }
+
+        for (int i = 0; i < directoryGetEntryAmount(tempTarget); i++)
+        {
+            Entry *entryTarget = directoryGetEntryAt(tempTarget, i);
+            bool doesExist = false;
+
+            for (int j = 0; j < directoryGetEntryAmount(tempSrc); j++)
+            {
+                Entry *entrySrc = directoryGetEntryAt(tempSrc, j);
+
+                if (entryGetType(entryTarget) == entryGetType(entrySrc))
+                {
+                    if ((entryGetType(entryTarget) == TYPE_DIRECTORY) && (strcmp(entryGetName(entryTarget), entryGetName(entrySrc)) == 0))
+                    {
+                        entryFree(entrySrc);
+                        doesExist = true;
+                        break;
+                    }
+                    else if ((entryGetType(entryTarget) == TYPE_FILE))
+                    {
+                        String *targetName = utilGetName(entryGetName(entryTarget));
+                        String *targetEx = utilGetEx(entryGetName(entryTarget));
+                        String *srcName = utilGetName(entryGetName(entrySrc));
+                        String *srcEx = utilGetEx(entryGetName(entrySrc));
+
+                        if (stringEquals(targetName, srcName) && stringEquals(targetEx, objType) && stringEquals(srcEx, cType))
+                        {
+                            stringFree(targetName);
+                            stringFree(targetEx);
+                            stringFree(srcName);
+                            stringFree(srcEx);
+                            entryFree(entrySrc);
+                            doesExist = true;
+                            break;
+                        }
+                        stringFree(targetName);
+                        stringFree(targetEx);
+                        stringFree(srcName);
+                        stringFree(srcEx);
+                    }
+                }
+                entryFree(entrySrc);
+            }
+
+            if (!doesExist)
+            {
+                if (entryGetType(entryTarget) == TYPE_DIRECTORY)
+                {
+                    Directory *tempDir = directoryGetSub(tempTarget, entryGetName(entryTarget));
+                    directoryClear(tempDir);
+                    directoryDelete(directoryGetPath(tempDir));
+
+                    directoryFree(tempDir);
+                }
+                else
+                {
+                    remove(entryGetPath(entryTarget));
+                }
+            }
+
+            entryFree(entryTarget);
+        }
+
         directoryFree(tempSrc);
         directoryFree(tempTarget);
     }

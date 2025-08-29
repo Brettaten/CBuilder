@@ -6,6 +6,7 @@
 #include "test.h"
 #include "../Util/String/string.h"
 #include "../Util/List/list.h"
+#include "../Util/Stack/stack.h"
 #include "../Main/main.h"
 
 enum TYPE
@@ -40,6 +41,16 @@ int updateFiles(List *splitFiles, String *token);
  */
 
 String *getFunctionName(String *func);
+
+
+/**
+ * Function used to concatenate two lists that contain strings
+ *
+ * @param dest the destination list
+ * @param src the source list
+ */
+
+void utilConcatenateLists(List *dest, List *src);
 
 
 

@@ -6,6 +6,7 @@
 #include "test.h"
 #include "../Util/String/string.h"
 #include "../Util/List/list.h"
+#include "../Util/Stack/stack.h"
 #include "../Main/main.h"
 
 enum TYPE
@@ -42,18 +43,28 @@ int updateFiles(List *splitFiles, String *token);
 String *getFunctionName(String *func);
 
 
-int splitFile(Entry *src, Directory *dest)
+/**
+ * Function used to concatenate two lists that contain strings
+ *
+ * @param dest the destination list
+ * @param src the source list
+ */
+
+void utilConcatenateLists(List *dest, List *src);
+
+
+List *splitFile(Entry *src, Directory *dest)
 {
     if (src == NULL)
     {
         printf("[ERROR] : the src entry can not be null | splitFile \n");
-        return -1;
+        return NULL;
     }
 
     if (dest == NULL)
     {
         printf("[ERROR] : the dest directory can not be null | splitFile \n");
-        return -1;
+        return NULL;
     }
 
     FILE *srcFile = fopen(entryGetPath(src), "r");
@@ -61,14 +72,14 @@ int splitFile(Entry *src, Directory *dest)
     if (srcFile == NULL)
     {
         printf("[ERROR] : src file could not be opened | splitFile \n");
-        return -1;
+        return NULL;
     }
 
     String *preSet = stringCreate(NULL);
     String *token = stringCreate(NULL);
 
     List *splitFiles = listCreate(stringSize(), &stringCopy, &stringFree);
-    List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
+    List *funcNames = listCreate(stringSize(), &stringCopy, &stringFree);
 
     int type;
     int funcCounter;
@@ -199,7 +210,7 @@ int splitFile(Entry *src, Directory *dest)
 
                     String *tempName = getFunctionName(token);
 
-                    listAdd(fileNames, tempName);
+                    listAdd(funcNames, tempName);
                     stringFree(tempName);
 
                     stringClear(token);
@@ -237,11 +248,13 @@ int splitFile(Entry *src, Directory *dest)
     String *cEx = stringCreate(".c");
     String *main = stringCreate("main");
 
+    List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
+
     for (int i = 0; i < listLength(splitFiles); i++)
     {
         String *func = listGet(splitFiles, i);
 
-        String *funcName = listGet(fileNames, i);
+        String *funcName = listGet(funcNames, i);
 
         if (stringEquals(funcName, main))
         {
@@ -255,12 +268,14 @@ int splitFile(Entry *src, Directory *dest)
         stringCat(filePath, funcName);
         stringCat(filePath, cEx);
 
+        listAdd(fileNames, filePath);
+
         FILE *tempFile = fopen(stringToArr(filePath), "w");
 
         if (tempFile == NULL)
         {
             printf("[ERROR] : Could not open file | splitFile \n");
-            return -1;
+            return NULL;
         }
 
         int c;
@@ -283,8 +298,8 @@ int splitFile(Entry *src, Directory *dest)
     stringFree(cEx);
     stringFree(pathSeparator);
     stringFree(name);
-    listFree(fileNames);
+    listFree(funcNames);
     listFree(splitFiles);
 
-    return 0;
+    return fileNames;
 }

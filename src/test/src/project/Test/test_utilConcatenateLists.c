@@ -55,29 +55,21 @@ void utilConcatenateLists(List *dest, List *src);
 
 
 
-int updateFiles(List *splitFiles, String *token)
+
+
+
+
+
+
+
+
+void utilConcatenateLists(List *dest, List *src)
 {
-    if (splitFiles == NULL)
+
+    for (int i = 0; i < listLength(src); i++)
     {
-        printf("[ERROR] : list can not be null | updateFiles \n");
-        return -1;
-    }
-
-    if (token == NULL)
-    {
-        printf("[ERROR] : string can not be null | updateFiles \n");
-        return -1;
-    }
-
-    for (int i = 0; i < listLength(splitFiles); i++)
-    {
-        String *temp = listGet(splitFiles, i);
-
-        stringCat(temp, token);
-
-        listSet(splitFiles, temp, i);
-
+        String *temp = listGet(src, i);
+        listAdd(dest, temp);
         stringFree(temp);
     }
-    return 0;
 }

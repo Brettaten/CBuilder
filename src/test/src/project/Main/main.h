@@ -147,4 +147,13 @@ bool isNull(void **p, int length);
  */
 String *utilGetName(char *name);
 
+/**
+ * Function that strips the file name and returns the file extension as a string
+ *
+ * @param name the file name with file extension
+ *
+ * @return Success: the file extension without name | Failure: NULL
+ */
+String *utilGetEx(char *name);
+
 #endif
