@@ -53,18 +53,14 @@ String *getFunctionName(String *func);
 void utilConcatenateLists(List *dest, List *src);
 
 
-void splitFile(Entry *src, Directory *dest)
+
+
+List *getFileNames(Entry *src)
 {
     if (src == NULL)
     {
         printf("[ERROR] : the src entry can not be null | splitFile \n");
-        return;
-    }
-
-    if (dest == NULL)
-    {
-        printf("[ERROR] : the dest directory can not be null | splitFile \n");
-        return;
+        return NULL;
     }
 
     FILE *srcFile = fopen(entryGetPath(src), "r");
@@ -72,13 +68,12 @@ void splitFile(Entry *src, Directory *dest)
     if (srcFile == NULL)
     {
         printf("[ERROR] : src file could not be opened | splitFile \n");
-        return;
+        return NULL;
     }
 
     String *preSet = stringCreate(NULL);
     String *token = stringCreate(NULL);
 
-    List *splitFiles = listCreate(stringSize(), &stringCopy, &stringFree);
     List *funcNames = listCreate(stringSize(), &stringCopy, &stringFree);
 
     int type;
@@ -116,33 +111,25 @@ void splitFile(Entry *src, Directory *dest)
         }
         else if (stringLength(token) == 0 && isspace(c))
         {
-            stringAdd(preSet, c);
+            ;
         }
         else if (type == MACRO)
         {
-            stringAdd(token, c);
-
             if (c == '\n')
             {
-                updateFiles(splitFiles, token);
-                stringCat(preSet, token);
                 stringClear(token);
             }
         }
         else if (type == COMMENT)
         {
-            stringAdd(token, c);
 
             if (c == '\n')
             {
-                updateFiles(splitFiles, token);
-                stringCat(preSet, token);
                 stringClear(token);
             }
         }
         else if (type == MULTI_COMMENT)
         {
-            stringAdd(token, c);
 
             if (c == '*')
             {
@@ -150,14 +137,9 @@ void splitFile(Entry *src, Directory *dest)
 
                 if (c == '/')
                 {
-                    stringAdd(token, c);
-                    stringAdd(token, '\n');
-                    updateFiles(splitFiles, token);
-                    stringCat(preSet, token);
                     stringClear(token);
                     continue;
                 }
-                stringAdd(token, c);
             }
         }
         else if (type == OTHER)
@@ -166,9 +148,6 @@ void splitFile(Entry *src, Directory *dest)
 
             if (c == ';')
             {
-                stringAdd(token, '\n');
-                updateFiles(splitFiles, token);
-                stringCat(preSet, token);
                 stringClear(token);
             }
             else if (c == '{')
@@ -204,35 +183,23 @@ void splitFile(Entry *src, Directory *dest)
 
                 if (funcCounter < 0)
                 {
-                    stringAdd(token, '\n');
-                    String *tempFile = stringCreate(stringToArr(preSet));
-                    stringCat(tempFile, token);
-
                     String *tempName = getFunctionName(token);
 
                     listAdd(funcNames, tempName);
                     stringFree(tempName);
 
                     stringClear(token);
-
-                    listAdd(splitFiles, tempFile);
-
-                    stringFree(tempFile);
                 }
             }
         }
         else if (type == STRUCT)
         {
-            stringAdd(token, c);
             if (c == '}')
             {
                 funcCounter = -1;
             }
             else if (c == ';' && funcCounter == -1)
             {
-                stringAdd(token, '\n');
-                updateFiles(splitFiles, token);
-                stringCat(preSet, token);
                 stringClear(token);
             }
         }
@@ -248,10 +215,10 @@ void splitFile(Entry *src, Directory *dest)
     String *cEx = stringCreate(".c");
     String *main = stringCreate("main");
 
-    for (int i = 0; i < listLength(splitFiles); i++)
-    {
-        String *func = listGet(splitFiles, i);
+    List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
 
+    for (int i = 0; i < listLength(funcNames); i++)
+    {
         String *funcName = listGet(funcNames, i);
 
         if (stringEquals(funcName, main))
@@ -259,34 +226,16 @@ void splitFile(Entry *src, Directory *dest)
             continue;
         }
 
-        String *filePath = stringCreate(directoryGetPath(dest));
-        stringCat(filePath, pathSeparator);
+        String *filePath = stringCreate(NULL);
         stringCat(filePath, name);
         stringCat(filePath, separator);
         stringCat(filePath, funcName);
         stringCat(filePath, cEx);
 
-        FILE *tempFile = fopen(stringToArr(filePath), "w");
-
-        if (tempFile == NULL)
-        {
-            printf("[ERROR] : Could not open file | splitFile \n");
-            return;
-        }
-
-        int c;
-
-        for (int j = 0; j < stringLength(func); j++)
-        {
-            c = stringGet(func, j);
-
-            putc(c, tempFile);
-        }
+        listAdd(fileNames, filePath);
 
         stringFree(funcName);
         stringFree(filePath);
-        stringFree(func);
-        fclose(tempFile);
     }
 
     stringFree(separator);
@@ -295,5 +244,6 @@ void splitFile(Entry *src, Directory *dest)
     stringFree(pathSeparator);
     stringFree(name);
     listFree(funcNames);
-    listFree(splitFiles);
+
+    return fileNames;
 }

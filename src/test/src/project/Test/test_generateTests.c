@@ -61,6 +61,8 @@ void utilConcatenateLists(List *dest, List *src);
 
 
 
+
+
 void generateTests(char *destPath, char *srcPath)
 {
     Directory *srcDir = directoryGet(srcPath);
@@ -201,17 +203,7 @@ void generateTests(char *destPath, char *srcPath)
 
                     if (delete == 2 || delete == 0)
                     {
-                        List *tempFileNames = splitFile(entrySrc, tempDirDest);
-
-                        if (tempFileNames == NULL)
-                        {
-                            printf("[ERROR] : Function splitFile failed | copyProject \n");
-                            return;
-                        }
-
-                        utilConcatenateLists(fileNames, tempFileNames);
-
-                        listFree(tempFileNames);
+                        splitFile(entrySrc, tempDirDest);
                     }
                 }
                 else if (entryDest == NULL || entryGetLastModified(entryDest) < entryGetLastModified(entrySrc))

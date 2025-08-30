@@ -6,10 +6,17 @@
  * 
  * @param src the source file
  * @param dest the directory where the sub files should be stored
- * 
- * @return a list of the created file names
  */
-List *splitFile(Entry *src, Directory *dest);
+void splitFile(Entry *src, Directory *dest);
+
+/**
+ * Function used to get the function names for every function in a c file
+ * 
+ * @param src the source file
+ * 
+ * @return a list of all function names
+ */
+List *getFileNames(Entry *src);
 
 /**
  * Function used to copy the project to the test directory and split the c files

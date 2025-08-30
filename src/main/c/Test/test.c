@@ -46,18 +46,18 @@ String *getFunctionName(String *func);
  */
 void utilConcatenateLists(List *dest, List *src);
 
-List *splitFile(Entry *src, Directory *dest)
+void splitFile(Entry *src, Directory *dest)
 {
     if (src == NULL)
     {
         printf("[ERROR] : the src entry can not be null | splitFile \n");
-        return NULL;
+        return;
     }
 
     if (dest == NULL)
     {
         printf("[ERROR] : the dest directory can not be null | splitFile \n");
-        return NULL;
+        return;
     }
 
     FILE *srcFile = fopen(entryGetPath(src), "r");
@@ -65,7 +65,7 @@ List *splitFile(Entry *src, Directory *dest)
     if (srcFile == NULL)
     {
         printf("[ERROR] : src file could not be opened | splitFile \n");
-        return NULL;
+        return;
     }
 
     String *preSet = stringCreate(NULL);
@@ -241,8 +241,6 @@ List *splitFile(Entry *src, Directory *dest)
     String *cEx = stringCreate(".c");
     String *main = stringCreate("main");
 
-    List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
-
     for (int i = 0; i < listLength(splitFiles); i++)
     {
         String *func = listGet(splitFiles, i);
@@ -261,14 +259,12 @@ List *splitFile(Entry *src, Directory *dest)
         stringCat(filePath, funcName);
         stringCat(filePath, cEx);
 
-        listAdd(fileNames, filePath);
-
         FILE *tempFile = fopen(stringToArr(filePath), "w");
 
         if (tempFile == NULL)
         {
             printf("[ERROR] : Could not open file | splitFile \n");
-            return NULL;
+            return;
         }
 
         int c;
@@ -293,6 +289,197 @@ List *splitFile(Entry *src, Directory *dest)
     stringFree(name);
     listFree(funcNames);
     listFree(splitFiles);
+}
+
+List *getFileNames(Entry *src)
+{
+    if (src == NULL)
+    {
+        printf("[ERROR] : the src entry can not be null | splitFile \n");
+        return NULL;
+    }
+
+    FILE *srcFile = fopen(entryGetPath(src), "r");
+
+    if (srcFile == NULL)
+    {
+        printf("[ERROR] : src file could not be opened | splitFile \n");
+        return NULL;
+    }
+
+    String *preSet = stringCreate(NULL);
+    String *token = stringCreate(NULL);
+
+    List *funcNames = listCreate(stringSize(), &stringCopy, &stringFree);
+
+    int type;
+    int funcCounter;
+    int lastC;
+    int c;
+
+    while ((c = getc(srcFile)) != EOF)
+    {
+        if (stringLength(token) == 0 && isspace(c) == false)
+        {
+            if (c == '#')
+            {
+                type = MACRO;
+            }
+            else if (c == '/')
+            {
+                stringAdd(token, c);
+                c = getc(srcFile);
+
+                if (c == '/')
+                {
+                    type = COMMENT;
+                }
+                else if (c == '*')
+                {
+                    type = MULTI_COMMENT;
+                }
+            }
+            else
+            {
+                type = OTHER;
+            }
+            stringAdd(token, c);
+        }
+        else if (stringLength(token) == 0 && isspace(c))
+        {
+            ;
+        }
+        else if (type == MACRO)
+        {
+            if (c == '\n')
+            {
+                stringClear(token);
+            }
+        }
+        else if (type == COMMENT)
+        {
+
+            if (c == '\n')
+            {
+                stringClear(token);
+            }
+        }
+        else if (type == MULTI_COMMENT)
+        {
+
+            if (c == '*')
+            {
+                c = getc(srcFile);
+
+                if (c == '/')
+                {
+                    stringClear(token);
+                    continue;
+                }
+            }
+        }
+        else if (type == OTHER)
+        {
+            stringAdd(token, c);
+
+            if (c == ';')
+            {
+                stringClear(token);
+            }
+            else if (c == '{')
+            {
+                if (lastC == ')')
+                {
+                    type = FUNCTION;
+                    funcCounter = 0;
+                }
+                else
+                {
+                    funcCounter = 0;
+                    type = STRUCT;
+                }
+            }
+
+            if (!isspace(c))
+            {
+                lastC = c;
+            }
+        }
+        else if (type == FUNCTION)
+        {
+            stringAdd(token, c);
+
+            if (c == '{')
+            {
+                funcCounter++;
+            }
+            else if (c == '}')
+            {
+                funcCounter--;
+
+                if (funcCounter < 0)
+                {
+                    String *tempName = getFunctionName(token);
+
+                    listAdd(funcNames, tempName);
+                    stringFree(tempName);
+
+                    stringClear(token);
+                }
+            }
+        }
+        else if (type == STRUCT)
+        {
+            if (c == '}')
+            {
+                funcCounter = -1;
+            }
+            else if (c == ';' && funcCounter == -1)
+            {
+                stringClear(token);
+            }
+        }
+    }
+    fclose(srcFile);
+
+    stringFree(preSet);
+    stringFree(token);
+
+    String *separator = stringCreate("_");
+    String *pathSeparator = stringCreate("/");
+    String *name = utilGetName(entryGetName(src));
+    String *cEx = stringCreate(".c");
+    String *main = stringCreate("main");
+
+    List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
+
+    for (int i = 0; i < listLength(funcNames); i++)
+    {
+        String *funcName = listGet(funcNames, i);
+
+        if (stringEquals(funcName, main))
+        {
+            continue;
+        }
+
+        String *filePath = stringCreate(NULL);
+        stringCat(filePath, name);
+        stringCat(filePath, separator);
+        stringCat(filePath, funcName);
+        stringCat(filePath, cEx);
+
+        listAdd(fileNames, filePath);
+
+        stringFree(funcName);
+        stringFree(filePath);
+    }
+
+    stringFree(separator);
+    stringFree(main);
+    stringFree(cEx);
+    stringFree(pathSeparator);
+    stringFree(name);
+    listFree(funcNames);
 
     return fileNames;
 }
@@ -439,7 +626,7 @@ void copyProject(char *destPath, char *srcPath)
 
                 if (st1 == false)
                 {
-                    printf("[ERROR] : Function directoryCreate failed | build \n");
+                    printf("[ERROR] : Function directoryCreate failed | copyProject \n");
                     return;
                 }
 
@@ -452,7 +639,7 @@ void copyProject(char *destPath, char *srcPath)
 
                 if (newDest == NULL)
                 {
-                    printf("[ERROR] : Function directoryGet failed | build \n");
+                    printf("[ERROR] : Function directoryGet failed | copyProject \n");
                     return;
                 }
 
@@ -473,56 +660,48 @@ void copyProject(char *destPath, char *srcPath)
 
                 if (stringEquals(extension, cExt))
                 {
-                    int delete = 2;
-                    for (int i = 0; i < directoryGetEntryAmount(tempDirDest); i++)
-                    {
-                        Entry *tempEntryDest = directoryGetEntryAt(tempDirDest, i);
-                        String *tempName = stringCreate(entryGetName(tempEntryDest));
-                        String *subName = stringSub(name, 0, stringLength(name) - 1);
-                        String *tempEx = utilGetEx(stringToArr(tempName));
+                    List *tempFileNames = getFileNames(entrySrc);
 
-                        if (stringEquals(subName, name) && stringEquals(tempEx, cExt))
+                    if (tempFileNames == NULL)
+                    {
+                        printf("[ERROR] : Function getFileNames failed | copyProject \n");
+                        return;
+                    }
+
+                    utilConcatenateLists(fileNames, tempFileNames);
+
+                    int delete = 2;
+                    for (int i = 0; i < listLength(tempFileNames); i++)
+                    {
+                        String *fileName = listGet(fileNames, i);
+                        bool doesExist = false;
+                        for (int j = 0; j < directoryGetEntryAmount(tempDirDest); j++)
                         {
-                            if (delete == 0)
+                            Entry *tempEntryDest = directoryGetEntryAt(tempDirDest, j);
+                            String *tempName = stringCreate(entryGetName(tempEntryDest));
+
+                            if (stringEquals(tempName, fileName) && entryGetLastModified(tempEntryDest) > entryGetLastModified(entrySrc))
                             {
-                                remove(entryGetPath(tempEntryDest));
-                            }
-                            else if (entryGetLastModified(tempEntryDest) > entryGetLastModified(entrySrc))
-                            {
-                                delete = 1;
                                 entryFree(tempEntryDest);
                                 stringFree(tempName);
-                                stringFree(subName);
-                                stringFree(tempEx);
+                                doesExist = true;
                                 break;
                             }
-                            else
-                            {
-                                delete = 0;
-                                remove(entryGetPath(tempEntryDest));
-                            }
+
+                            entryFree(tempEntryDest);
+                            stringFree(tempName);
                         }
 
-                        entryFree(tempEntryDest);
-                        stringFree(tempName);
-                        stringFree(subName);
-                        stringFree(tempEx);
-                    }
-
-                    if (delete == 2 || delete == 0)
-                    {
-                        List *tempFileNames = splitFile(entrySrc, tempDirDest);
-
-                        if (tempFileNames == NULL)
+                        if (!doesExist)
                         {
-                            printf("[ERROR] : Function splitFile failed | copyProject \n");
-                            return;
+                            splitFile(entrySrc, tempDirDest);
+                            stringFree(fileName);
+                            break;
                         }
-
-                        utilConcatenateLists(fileNames, tempFileNames);
-
-                        listFree(tempFileNames);
+                        stringFree(fileName);
                     }
+
+                    listFree(tempFileNames);
                 }
                 else if (entryDest == NULL || entryGetLastModified(entryDest) < entryGetLastModified(entrySrc))
                 {
@@ -554,6 +733,7 @@ void copyProject(char *destPath, char *srcPath)
         for (int i = 0; i < directoryGetEntryAmount(tempDirDest); i++)
         {
             Entry *entryTarget = directoryGetEntryAt(tempDirDest, i);
+            String *targetEx = utilGetEx(entryGetName(entryTarget));
             bool doesExist = false;
 
             if (entryGetType(entryTarget) == TYPE_DIRECTORY)
@@ -574,20 +754,38 @@ void copyProject(char *destPath, char *srcPath)
 
             else
             {
-                String *name = stringCreate(entryGetName(entryTarget));
-
-                for (int i = 0; i < listLength(fileNames); i++)
+                if (stringEquals(targetEx, cExt))
                 {
-                    String *temp = listGet(fileNames, i);
-                    if (stringEquals(name, temp))
+                    String *name = stringCreate(entryGetName(entryTarget));
+
+                    for (int i = 0; i < listLength(fileNames); i++)
                     {
+                        String *temp = listGet(fileNames, i);
+                        if (stringEquals(name, temp))
+                        {
+                            stringFree(temp);
+                            doesExist = true;
+                            break;
+                        }
                         stringFree(temp);
-                        doesExist = true;
-                        break;
                     }
-                    stringFree(temp);
+                    stringFree(name);
                 }
-                stringFree(name);
+                else
+                {
+                    for (int j = 0; j < directoryGetEntryAmount(tempDirSrc); j++)
+                    {
+                        Entry *entrySrc = directoryGetEntryAt(tempDirSrc, j);
+
+                        if (entryGetType(entrySrc) == TYPE_FILE && strcmp(entryGetName(entryTarget), entryGetName(entrySrc)) == 0)
+                        {
+                            entryFree(entrySrc);
+                            doesExist = true;
+                            break;
+                        }
+                        entryFree(entrySrc);
+                    }
+                }
             }
 
             if (!doesExist)
@@ -607,6 +805,7 @@ void copyProject(char *destPath, char *srcPath)
             }
 
             entryFree(entryTarget);
+            stringFree(targetEx);
         }
 
         directoryFree(tempDirSrc);
@@ -626,7 +825,7 @@ void generateTests(char *destPath, char *srcPath)
 
     if (srcDir == NULL || destDir == NULL)
     {
-        printf("[ERROR] : Directory could not be found | copyProject \n");
+        printf("[ERROR] : Directory could not be found | generateTests \n");
         return;
     }
 
@@ -635,7 +834,7 @@ void generateTests(char *destPath, char *srcPath)
 
     if (stackSrc == NULL || stackDest == NULL)
     {
-        printf("[ERROR] : function stackCreate failed | copyProject \n");
+        printf("[ERROR] : function stackCreate failed | generateTests \n");
         return;
     }
 
@@ -655,7 +854,7 @@ void generateTests(char *destPath, char *srcPath)
 
         if (tempDirSrc == NULL || tempDirDest == NULL)
         {
-            printf("[ERROR] : Function stackPop failed | copyProject \n");
+            printf("[ERROR] : Function stackPop failed | generateTests \n");
             return;
         }
 
@@ -668,7 +867,7 @@ void generateTests(char *destPath, char *srcPath)
 
             if (entrySrc == NULL)
             {
-                printf("[ERROR] : function directoryGetEntryAt failed | copyProject \n");
+                printf("[ERROR] : function directoryGetEntryAt failed | generateTests \n");
                 return;
             }
 
@@ -679,7 +878,7 @@ void generateTests(char *destPath, char *srcPath)
 
                 if (newSrc == NULL)
                 {
-                    printf("[ERROR] : function directoryGet failed | copyProject \n");
+                    printf("[ERROR] : function directoryGet failed | generateTests \n");
                     return;
                 }
 
@@ -687,7 +886,7 @@ void generateTests(char *destPath, char *srcPath)
 
                 if (st1 == false)
                 {
-                    printf("[ERROR] : Function directoryCreate failed | build \n");
+                    printf("[ERROR] : Function directoryCreate failed | generateTests \n");
                     return;
                 }
 
@@ -700,7 +899,7 @@ void generateTests(char *destPath, char *srcPath)
 
                 if (newDest == NULL)
                 {
-                    printf("[ERROR] : Function directoryGet failed | build \n");
+                    printf("[ERROR] : Function directoryGet failed | generateTests \n");
                     return;
                 }
 
@@ -716,63 +915,12 @@ void generateTests(char *destPath, char *srcPath)
 
                 String *extension = utilGetEx(entryGetName(entrySrc));
                 String *name = utilGetName(entryGetName(entrySrc));
+                String *prefix = stringSub(name, 0, 3);
+                String *test = stringCreate("test");
 
                 Entry *entryDest = directoryGetEntry(tempDirDest, entryGetName(entrySrc), TYPE_FILE);
 
-                if (stringEquals(extension, cExt))
-                {
-                    int delete = 2;
-                    for (int i = 0; i < directoryGetEntryAmount(tempDirDest); i++)
-                    {
-                        Entry *tempEntryDest = directoryGetEntryAt(tempDirDest, i);
-                        String *tempName = stringCreate(entryGetName(tempEntryDest));
-                        String *subName = stringSub(name, 0, stringLength(name) - 1);
-                        String *tempEx = utilGetEx(stringToArr(tempName));
-
-                        if (stringEquals(subName, name) && stringEquals(tempEx, cExt))
-                        {
-                            if (delete == 0)
-                            {
-                                remove(entryGetPath(tempEntryDest));
-                            }
-                            else if (entryGetLastModified(tempEntryDest) > entryGetLastModified(entrySrc))
-                            {
-                                delete = 1;
-                                entryFree(tempEntryDest);
-                                stringFree(tempName);
-                                stringFree(subName);
-                                stringFree(tempEx);
-                                break;
-                            }
-                            else
-                            {
-                                delete = 0;
-                                remove(entryGetPath(tempEntryDest));
-                            }
-                        }
-
-                        entryFree(tempEntryDest);
-                        stringFree(tempName);
-                        stringFree(subName);
-                        stringFree(tempEx);
-                    }
-
-                    if (delete == 2 || delete == 0)
-                    {
-                        List *tempFileNames = splitFile(entrySrc, tempDirDest);
-
-                        if (tempFileNames == NULL)
-                        {
-                            printf("[ERROR] : Function splitFile failed | copyProject \n");
-                            return;
-                        }
-
-                        utilConcatenateLists(fileNames, tempFileNames);
-
-                        listFree(tempFileNames);
-                    }
-                }
-                else if (entryDest == NULL || entryGetLastModified(entryDest) < entryGetLastModified(entrySrc))
+                if (entryDest == NULL || entryGetLastModified(entryDest) < entryGetLastModified(entrySrc))
                 {
                     char dest[MAX_LENGTH_PATH];
                     strcpy(dest, directoryGetPath(tempDirDest));
@@ -783,13 +931,20 @@ void generateTests(char *destPath, char *srcPath)
 
                     if (st2 == false)
                     {
-                        printf("[ERROR] : function fileCopy failed | copyProject \n");
+                        printf("[ERROR] : function fileCopy failed | generateTests \n");
                         return;
+                    }
+
+                    if(stringEquals(prefix, test)){
+
                     }
                 }
 
                 stringFree(extension);
                 stringFree(name);
+                stringFree(prefix);
+                stringFree(test);
+
                 if (entryDest != NULL)
                 {
                     entryFree(entryDest);
