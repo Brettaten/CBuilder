@@ -70,6 +70,9 @@ void splitFile(Entry *src, Directory *dest)
 
     String *preSet = stringCreate(NULL);
     String *token = stringCreate(NULL);
+    String *currToken = stringCreate(NULL);
+
+    String *structStr = stringCreate("struct");
 
     List *splitFiles = listCreate(stringSize(), &stringCopy, &stringFree);
     List *funcNames = listCreate(stringSize(), &stringCopy, &stringFree);
@@ -81,35 +84,49 @@ void splitFile(Entry *src, Directory *dest)
 
     while ((c = getc(srcFile)) != EOF)
     {
-        if (stringLength(token) == 0 && isspace(c) == false)
+        if (type == OTHER)
         {
-            if (c == '#')
+            if (stringLength(token) == 0 && !isspace(c))
             {
-                type = MACRO;
-            }
-            else if (c == '/')
-            {
-                stringAdd(token, c);
-                c = getc(srcFile);
+                stringClear(currToken);
+                if (c == '#')
+                {
+                    type = MACRO;
+                }
+                else if (c == '/')
+                {
+                    stringAdd(token, c);
+                    stringAdd(currToken, c);
+                    c = getc(srcFile);
 
-                if (c == '/')
-                {
-                    type = COMMENT;
+                    if (c == '/')
+                    {
+                        type = COMMENT;
+                    }
+                    else if (c == '*')
+                    {
+                        type = MULTI_COMMENT;
+                    }
                 }
-                else if (c == '*')
-                {
-                    type = MULTI_COMMENT;
-                }
+                stringAdd(token, c);
+                stringAdd(currToken, c);
+            }
+            else if (stringLength(token) == 0 && isspace(c))
+            {
+                stringAdd(preSet, c);
             }
             else
             {
-                type = OTHER;
+                if (!isspace(c))
+                {
+                    stringAdd(token, c);
+                    stringAdd(currToken, c);
+                }
+                if (isspace(c))
+                {
+                    stringAdd(token, c);
+                }
             }
-            stringAdd(token, c);
-        }
-        else if (stringLength(token) == 0 && isspace(c))
-        {
-            stringAdd(preSet, c);
         }
         else if (type == MACRO)
         {
@@ -211,6 +228,8 @@ void splitFile(Entry *src, Directory *dest)
                     listAdd(splitFiles, tempFile);
 
                     stringFree(tempFile);
+
+                    type = OTHER;
                 }
             }
         }
@@ -234,6 +253,7 @@ void splitFile(Entry *src, Directory *dest)
 
     stringFree(preSet);
     stringFree(token);
+    stringFree(currToken);
 
     String *separator = stringCreate("_");
     String *pathSeparator = stringCreate("/");
@@ -935,8 +955,8 @@ void generateTests(char *destPath, char *srcPath)
                         return;
                     }
 
-                    if(stringEquals(prefix, test)){
-
+                    if (stringEquals(prefix, test))
+                    {
                     }
                 }
 
