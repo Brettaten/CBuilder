@@ -5,12 +5,6 @@
 #include "string.h"
 #include "../List/list.h"
 
-typedef struct String
-{
-    List *list;
-} String;
-
-
 /**
  * Function used determine whether an index is in bounds
  *
@@ -20,7 +14,7 @@ typedef struct String
  * @return true or false
  */
 
-bool isIndexInBoundsString(String *pString, int index);
+bool isIndexInBoundsString(char *pString, int index);
 
 
 
@@ -41,35 +35,36 @@ bool isIndexInBoundsString(String *pString, int index);
 
 
 
-
-
-
-
-
-
-
-
-int stringRemove(String *pString, int index)
+char *stringRemove(char *pString, int index)
 {
     if (pString == NULL)
     {
         printf("[ERROR] : String is null | stringRemove \n");
-        return -1;
+        return NULL;
     }
 
     if (!isIndexInBoundsString(pString, index))
     {
         printf("[WARN] : Index out of bounds | stringRemove \n");
-        return -1;
+        return NULL;
     }
 
-    int st1 = listRemove(pString->list, index);
+    char *newString = (char *)malloc(sizeof(char) * (strlen(pString)));
 
-    if (st1 == -1)
+    for (int i = 0, j = 0; i < strlen(pString); i++, j++)
     {
-        printf("[ERROR] : Function listRemove failed | stringRemove \n");
-        return -1;
+        if (i == index)
+        {
+            j--;
+        }
+        else
+        {
+            newString[j] = pString[i];
+        }
     }
 
-    return 0;
+    newString[strlen(pString) - 1] = '\0';
+    free(pString);
+  
+    return newString;
 }

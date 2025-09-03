@@ -23,7 +23,10 @@
  * @return true if c is in arr, false if c is not in arr
  */
 
-bool utilIsInArray(char *arr, int length, int c);
+ bool utilIsInArray(char *arr, int length, int c);
+
+
+ int x = 10;
 
 
 
@@ -52,14 +55,14 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
-int getCommand(char *command, char *path, String *destCmd)
+char *getCommand(char *command, char *path, char *destCmd)
 {
     FILE *file = fopen(path, "r");
 
     if (file == NULL)
     {
         printf("[ERROR] : CBuilderfile could not be opened | getCommand \n");
-        return -1;
+        return NULL;
     }
 
     int c;
@@ -179,30 +182,30 @@ int getCommand(char *command, char *path, String *destCmd)
         free(cmd);
         free(tokenList);
         printf("[ERROR] : Could not read command from cbuilderfile | getCommand \n");
-        return -1;
+        return NULL;
     }
 
-    int st1 = stringClear(destCmd);
+    destCmd = stringClear(destCmd);
 
-    if (st1 == -1)
+    if (destCmd == NULL)
     {
         printf("[ERROR] : Function stringClear failed | getCommand \n");
-        return -1;
+        return NULL;
     }
 
     for (int i = 0; i < strlen(cmd); i++)
     {
-        int st2 = stringAdd(destCmd, cmd[i]);
+        destCmd = stringAdd(destCmd, cmd[i]);
 
-        if (st2 == -1)
+        if (destCmd == NULL)
         {
             printf("[ERROR] : Function stringAdd failed | getCommand \n");
-            return -1;
+            return NULL;
         }
     }
 
     free(cmd);
     free(tokenList);
 
-    return 0;
+    return destCmd;
 }

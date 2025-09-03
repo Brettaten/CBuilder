@@ -84,9 +84,9 @@ void testBuild(char *path);
  * @param path The path were to look for the project
  * @param destCmd The destination of the command
  * 
- * @return Success: 0 | Failure: -1
+ * @return Success: the command | Failure: NULL
  */
-int getCommand(char *command, char *path, String *destCmd);
+char *getCommand(char *command, char *path, char *destCmd);
 
 /**
  * Function that checks if a CBuilder project exists in a passed directory
@@ -119,7 +119,7 @@ int findProject(char *path, char *dest);
  * 
  * @return all object files concatenated in one string
  */
-String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, int *fileCounter, int *alteredFiles);
+char *compile(char *destPath, char *srcPath, char *projectPath, bool debug, int *fileCounter, int *alteredFiles);
 
 /**
  * Function used to get the ressource directory of this cbuilder project
@@ -145,7 +145,7 @@ bool isNull(void **p, int length);
  *
  * @return Success: the file name without extension | Failure: NULL
  */
-String *utilGetName(char *name);
+char *utilGetName(char *name);
 
 /**
  * Function that strips the file name and returns the file extension as a string
@@ -154,6 +154,6 @@ String *utilGetName(char *name);
  *
  * @return Success: the file extension without name | Failure: NULL
  */
-String *utilGetEx(char *name);
+char *utilGetEx(char *name);
 
 #endif

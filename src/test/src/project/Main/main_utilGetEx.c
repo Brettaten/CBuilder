@@ -23,7 +23,10 @@
  * @return true if c is in arr, false if c is not in arr
  */
 
-bool utilIsInArray(char *arr, int length, int c);
+ bool utilIsInArray(char *arr, int length, int c);
+
+
+ int x = 10;
 
 
 
@@ -66,7 +69,7 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
-String *utilGetEx(char *name)
+char *utilGetEx(char *name)
 {
     if (name == NULL)
     {
@@ -78,18 +81,18 @@ String *utilGetEx(char *name)
     char ex[length];
     bool isExt = false;
 
-    String *str = stringCreate(NULL);
+    char *str = stringCreate(NULL);
 
     for (int i = 0; i < length; i++)
     {
         if (isExt)
         {
-            stringAdd(str, name[i]);
+            str = stringAdd(str, name[i]);
         }
         else if (name[i] == '.')
         {
             isExt = true;
-            stringAdd(str, name[i]);
+            str = stringAdd(str, name[i]);
         }
     }
 

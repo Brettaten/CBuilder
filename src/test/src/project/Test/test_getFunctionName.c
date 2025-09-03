@@ -29,7 +29,7 @@ enum TYPE
  * @return Success: 0 | Failure: -1
  */
 
-int updateFiles(List *splitFiles, String *token);
+int updateFiles(List *splitFiles, char *token);
 
 
 /**
@@ -40,7 +40,7 @@ int updateFiles(List *splitFiles, String *token);
  * @return Success: the name
  */
 
-String *getFunctionName(String *func);
+char *getFunctionName(char *func);
 
 
 /**
@@ -59,19 +59,19 @@ void utilConcatenateLists(List *dest, List *src);
 
 
 
-String *getFunctionName(String *func)
+char *getFunctionName(char *func)
 {
-    String *token = stringCreate(NULL);
+    char *token = stringCreate(NULL);
     bool isName = false;
     int c;
 
-    for (int i = 0; i < stringLength(func); i++)
+    for (int i = 0; i < strlen(func); i++)
     {
-        c = stringGet(func, i);
+        c = func[i];
 
         if (isName)
         {
-            if (c == '*' && stringLength(token) == 0)
+            if (c == '*' && strlen(token) == 0)
             {
                 continue;
             }
@@ -81,27 +81,29 @@ String *getFunctionName(String *func)
             }
             else
             {
-                stringAdd(token, c);
+                token = stringAdd(token, c);
             }
         }
         else
         {
             if (isspace(c))
             {
-                if (stringLength(token) != 0)
+                if (strlen(token) != 0 && strcmp(token, "static") != 0 && strcmp(token, "extern") != 0 && strcmp(token, "inline") != 0 && strcmp(token, "_Noreturn") != 0)
                 {
-                    stringClear(token);
+                    token = stringClear(token);
                     isName = true;
+                }
+                else if (strcmp(token, "static") == 0 || strcmp(token, "extern") == 0 || strcmp(token, "inline") == 0 || strcmp(token, "_Noreturn") == 0)
+                {
+                    token = stringClear(token);
                 }
             }
             else
             {
-                stringAdd(token, c);
+                token = stringAdd(token, c);
             }
         }
     }
 
     return token;
-
-    return 0;
 }

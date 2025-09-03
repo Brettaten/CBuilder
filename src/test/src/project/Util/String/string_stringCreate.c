@@ -5,12 +5,6 @@
 #include "string.h"
 #include "../List/list.h"
 
-typedef struct String
-{
-    List *list;
-} String;
-
-
 /**
  * Function used determine whether an index is in bounds
  *
@@ -20,43 +14,22 @@ typedef struct String
  * @return true or false
  */
 
-bool isIndexInBoundsString(String *pString, int index);
+bool isIndexInBoundsString(char *pString, int index);
 
 
-String *stringCreate(char *string)
+char *stringCreate(char *pString)
 {
-    List *list = listCreate(sizeof(char), NULL, NULL);
+    char *newString;
 
-    if (list == NULL)
+    if (pString != NULL)
     {
-        printf("[ERROR] : Memory allocation failed | stringCreate \n");
-        return NULL;
+        newString = malloc(sizeof(char) * strlen(pString) + 1);
+        strcpy(newString, pString);
+    }
+    else{
+        newString = malloc(sizeof(char));
+        newString[0] = '\0';
     }
 
-    String *pString = (String *)malloc(sizeof(String));
-
-    if (pString == NULL)
-    {
-        printf("[ERROR] : Memory allocation failed | stringCreate \n");
-        return NULL;
-    }
-
-    pString->list = list;
-
-    if (string != NULL)
-    {
-
-        int length = strlen(string);
-        for (int i = 0; i < length; i++)
-        {
-            int st1 = stringAdd(pString, string[i]);
-
-            if (st1 == -1)
-            {
-                printf("[ERROR] : function stringAdd failed | stringCreate \n");
-            }
-        }
-    }
-
-    return pString;
+    return newString;
 }

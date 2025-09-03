@@ -5,12 +5,6 @@
 #include "string.h"
 #include "../List/list.h"
 
-typedef struct String
-{
-    List *list;
-} String;
-
-
 /**
  * Function used determine whether an index is in bounds
  *
@@ -20,7 +14,7 @@ typedef struct String
  * @return true or false
  */
 
-bool isIndexInBoundsString(String *pString, int index);
+bool isIndexInBoundsString(char *pString, int index);
 
 
 
@@ -43,23 +37,7 @@ bool isIndexInBoundsString(String *pString, int index);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool isIndexInBoundsString(String *pString, int index)
+bool isIndexInBoundsString(char *pString, int index)
 {
     if (pString == NULL)
     {
@@ -67,7 +45,7 @@ bool isIndexInBoundsString(String *pString, int index)
         return -1;
     }
 
-    int length = stringLength(pString);
+    int length = strlen(pString);
     if (index < 0 || index >= length)
     {
         return false;

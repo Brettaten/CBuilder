@@ -23,7 +23,10 @@
  * @return true if c is in arr, false if c is not in arr
  */
 
-bool utilIsInArray(char *arr, int length, int c);
+ bool utilIsInArray(char *arr, int length, int c);
+
+
+ int x = 10;
 
 
 
@@ -85,7 +88,7 @@ void testBuild(char *path)
         int fileCounter = 0;
         int alteredFiles = 0;
 
-        String *oFileList = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+        char *oFileList = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
 
         strcpy(srcPath, projectPath);
         strcpy(destPath, projectPath);

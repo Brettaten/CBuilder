@@ -5,12 +5,6 @@
 #include "string.h"
 #include "../List/list.h"
 
-typedef struct String
-{
-    List *list;
-} String;
-
-
 /**
  * Function used determine whether an index is in bounds
  *
@@ -20,34 +14,50 @@ typedef struct String
  * @return true or false
  */
 
-bool isIndexInBoundsString(String *pString, int index);
+bool isIndexInBoundsString(char *pString, int index);
 
 
 
 
 
 
-int stringAddIndex(String *pString, char value, int index)
+char *stringAddIndex(char *pString, char value, int index)
 {
     if (pString == NULL)
     {
         printf("[ERROR] : string is null | stringAddIndex \n");
-        return -1;
+        return NULL;
     }
 
     if (!isIndexInBoundsString(pString, index))
     {
         printf("[WARN] : Index out of bounds | stringAddIndex \n");
-        return -1;
+        return NULL;
     }
 
-    int st1 = listAddIndex(pString->list, &value, index);
+    char temp = pString[strlen(pString) - 1];
 
-    if (st1 == -1)
+    pString = stringAdd(pString, temp);
+
+    if (pString == NULL)
     {
-        printf("[ERROR] : Function listAddIndex failed | stringAddIndex \n");
-        return -1;
+        printf("[ERROR] : Function stringAdd failed | stringAddIndex \n");
+        return NULL;
     }
 
-    return 0;
+    for (int i = strlen(pString) - 2; i > index; i--)
+    {
+        int st2 = stringSwap(pString, i - 1, i);
+
+        if (st2 == -1)
+        {
+            printf("[ERROR] : Function stringSwap failed | stringAddIndex \n");
+            free(pString);
+            return NULL;
+        }
+    }
+
+    pString[index] = value;
+
+    return pString;
 }

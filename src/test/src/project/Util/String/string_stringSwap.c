@@ -5,12 +5,6 @@
 #include "string.h"
 #include "../List/list.h"
 
-typedef struct String
-{
-    List *list;
-} String;
-
-
 /**
  * Function used determine whether an index is in bounds
  *
@@ -20,7 +14,7 @@ typedef struct String
  * @return true or false
  */
 
-bool isIndexInBoundsString(String *pString, int index);
+bool isIndexInBoundsString(char *pString, int index);
 
 
 
@@ -29,11 +23,7 @@ bool isIndexInBoundsString(String *pString, int index);
 
 
 
-
-
-
-
-int stringSwap(String *pString, int index1, int index2)
+int stringSwap(char *pString, int index1, int index2)
 {
     if (pString == NULL)
     {
@@ -47,13 +37,10 @@ int stringSwap(String *pString, int index1, int index2)
         return -1;
     }
 
-    int st1 = listSwap(pString->list, index1, index2);
+    char temp = pString[index1];
 
-    if (st1 == -1)
-    {
-        printf("[ERROR] : Function listSwap failed | stringSwap \n");
-        return -1;
-    }
+    pString[index1] = pString[index2];
+    pString[index2] = temp;
 
     return 0;
 }

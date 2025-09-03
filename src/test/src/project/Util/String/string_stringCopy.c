@@ -5,12 +5,6 @@
 #include "string.h"
 #include "../List/list.h"
 
-typedef struct String
-{
-    List *list;
-} String;
-
-
 /**
  * Function used determine whether an index is in bounds
  *
@@ -20,13 +14,7 @@ typedef struct String
  * @return true or false
  */
 
-bool isIndexInBoundsString(String *pString, int index);
-
-
-
-
-
-
+bool isIndexInBoundsString(char *pString, int index);
 
 
 
@@ -40,26 +28,18 @@ bool isIndexInBoundsString(String *pString, int index);
 void *stringCopy(void *pString)
 {
 
-    String *cp = (String *)pString;
+    char *cp = (char *)pString;
     if (cp == NULL)
     {
         printf("[ERROR] : String is null | stringCopy \n");
         return NULL;
     }
 
-    String *stringCpy = stringCreate(NULL);
+    char *stringCpy = stringCreate(cp);
 
     if (stringCpy == NULL)
     {
         printf("[ERROR] : Function stringCreate failed | stringCopy \n");
-        return NULL;
-    }
-
-    stringCpy->list = listCopy(cp->list);
-
-    if (stringCpy->list == NULL)
-    {
-        printf("[ERROR] : Function listCopy failed | stringCopy \n");
         return NULL;
     }
 

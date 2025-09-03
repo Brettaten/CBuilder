@@ -29,7 +29,7 @@ enum TYPE
  * @return Success: 0 | Failure: -1
  */
 
-int updateFiles(List *splitFiles, String *token);
+int updateFiles(List *splitFiles, char *token);
 
 
 /**
@@ -40,7 +40,7 @@ int updateFiles(List *splitFiles, String *token);
  * @return Success: the name
  */
 
-String *getFunctionName(String *func);
+char *getFunctionName(char *func);
 
 
 /**
@@ -87,7 +87,7 @@ void copyProject(char *destPath, char *srcPath)
     directoryFree(srcDir);
     directoryFree(destDir);
 
-    String *cExt = stringCreate(".c");
+    char *cExt = stringCreate(".c");
 
     while (stackLength(stackSrc) > 0)
     {
@@ -101,7 +101,7 @@ void copyProject(char *destPath, char *srcPath)
             return;
         }
 
-        List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
+        List *fileNames = listCreate(sizeof(char *), &stringCopy, NULL);
 
         for (int i = 0; i < directoryGetEntryAmount(tempDirSrc); i++)
         {
@@ -156,12 +156,12 @@ void copyProject(char *destPath, char *srcPath)
             else
             {
 
-                String *extension = utilGetEx(entryGetName(entrySrc));
-                String *name = utilGetName(entryGetName(entrySrc));
+                char *extension = utilGetEx(entryGetName(entrySrc));
+                char *name = utilGetName(entryGetName(entrySrc));
 
                 Entry *entryDest = directoryGetEntry(tempDirDest, entryGetName(entrySrc), TYPE_FILE);
 
-                if (stringEquals(extension, cExt))
+                if (strcmp(extension, cExt) == 0)
                 {
                     List *tempFileNames = getFileNames(entrySrc);
 
@@ -176,32 +176,32 @@ void copyProject(char *destPath, char *srcPath)
                     int delete = 2;
                     for (int i = 0; i < listLength(tempFileNames); i++)
                     {
-                        String *fileName = listGet(fileNames, i);
+                        char *fileName = listGet(fileNames, i);
                         bool doesExist = false;
                         for (int j = 0; j < directoryGetEntryAmount(tempDirDest); j++)
                         {
                             Entry *tempEntryDest = directoryGetEntryAt(tempDirDest, j);
-                            String *tempName = stringCreate(entryGetName(tempEntryDest));
+                            char *tempName = stringCreate(entryGetName(tempEntryDest));
 
-                            if (stringEquals(tempName, fileName) && entryGetLastModified(tempEntryDest) > entryGetLastModified(entrySrc))
+                            if (strcmp(tempName, fileName) == 0 && entryGetLastModified(tempEntryDest) > entryGetLastModified(entrySrc))
                             {
                                 entryFree(tempEntryDest);
-                                stringFree(tempName);
+                                free(tempName);
                                 doesExist = true;
                                 break;
                             }
 
                             entryFree(tempEntryDest);
-                            stringFree(tempName);
+                            free(tempName);
                         }
 
                         if (!doesExist)
                         {
                             splitFile(entrySrc, tempDirDest);
-                            stringFree(fileName);
+                            free(fileName);
                             break;
                         }
-                        stringFree(fileName);
+                        free(fileName);
                     }
 
                     listFree(tempFileNames);
@@ -222,8 +222,8 @@ void copyProject(char *destPath, char *srcPath)
                     }
                 }
 
-                stringFree(extension);
-                stringFree(name);
+                free(extension);
+                free(name);
                 if (entryDest != NULL)
                 {
                     entryFree(entryDest);
@@ -236,7 +236,7 @@ void copyProject(char *destPath, char *srcPath)
         for (int i = 0; i < directoryGetEntryAmount(tempDirDest); i++)
         {
             Entry *entryTarget = directoryGetEntryAt(tempDirDest, i);
-            String *targetEx = utilGetEx(entryGetName(entryTarget));
+            char *targetEx = utilGetEx(entryGetName(entryTarget));
             bool doesExist = false;
 
             if (entryGetType(entryTarget) == TYPE_DIRECTORY)
@@ -257,22 +257,22 @@ void copyProject(char *destPath, char *srcPath)
 
             else
             {
-                if (stringEquals(targetEx, cExt))
+                if (strcmp(targetEx, cExt) == 0)
                 {
-                    String *name = stringCreate(entryGetName(entryTarget));
+                    char *name = stringCreate(entryGetName(entryTarget));
 
                     for (int i = 0; i < listLength(fileNames); i++)
                     {
-                        String *temp = listGet(fileNames, i);
-                        if (stringEquals(name, temp))
+                        char *temp = listGet(fileNames, i);
+                        if (strcmp(name, temp) == 0)
                         {
-                            stringFree(temp);
+                            free(temp);
                             doesExist = true;
                             break;
                         }
-                        stringFree(temp);
+                        free(temp);
                     }
-                    stringFree(name);
+                    free(name);
                 }
                 else
                 {
@@ -308,14 +308,14 @@ void copyProject(char *destPath, char *srcPath)
             }
 
             entryFree(entryTarget);
-            stringFree(targetEx);
+            free(targetEx);
         }
 
         directoryFree(tempDirSrc);
         directoryFree(tempDirDest);
         listFree(fileNames);
     }
-    stringFree(cExt);
+    free(cExt);
 
     stackFree(stackSrc);
     stackFree(stackDest);

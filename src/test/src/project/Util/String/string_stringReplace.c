@@ -5,12 +5,6 @@
 #include "string.h"
 #include "../List/list.h"
 
-typedef struct String
-{
-    List *list;
-} String;
-
-
 /**
  * Function used determine whether an index is in bounds
  *
@@ -20,7 +14,7 @@ typedef struct String
  * @return true or false
  */
 
-bool isIndexInBoundsString(String *pString, int index);
+bool isIndexInBoundsString(char *pString, int index);
 
 
 
@@ -39,142 +33,80 @@ bool isIndexInBoundsString(String *pString, int index);
 
 
 
-
-
-
-
-int stringReplace(String *pString, String *pStringDest, String *pStringSrc)
+char *stringReplace(char *pString, char *pStringDest, char *pStringSrc)
 {
     if (pString == NULL || pStringDest == NULL || pStringSrc == NULL)
     {
         printf("[ERROR] : String is null | stringReplace \n");
-        return -1;
+        return NULL;
     }
 
-    int lengthDest = stringLength(pStringDest);
-    int lengthSrc = stringLength(pStringSrc);
-    int length = stringLength(pString);
+    int lengthDest = strlen(pStringDest);
+    int lengthSrc = strlen(pStringSrc);
+    int length = strlen(pString);
     if (lengthDest > length)
     {
         printf("[INFO] : StringDest can not be longer than the main string | stringReplace \n");
-        return -1;
+        return NULL;
     }
 
-    bool isMatch = false;
-    int matchCounter = 0;
+    int len = 0;
 
-    int i = -1;
-
-    while (true)
+    for (int i = 0; i < length; i++)
     {
-        i++;
-        lengthDest = stringLength(pStringDest);
-        lengthSrc = stringLength(pStringSrc);
-        if (isMatch)
+        int end = i + lengthDest - 1;
+
+        if (isIndexInBoundsString(pString, end))
         {
-            if (matchCounter < lengthDest && matchCounter < lengthSrc)
+            char *temp = stringSub(pString, i, end);
+
+            if (strcmp(pStringDest, temp) == 0)
             {
-                char temp = stringGet(pStringSrc, matchCounter);
-
-                if (temp == -1)
-                {
-                    printf("[ERROR] : Function stringGet failed | stringReplace \n");
-                    return -1;
-                }
-                int st1;
-                if (isIndexInBoundsString(pString, i))
-                {
-                    st1 = stringSet(pString, temp, i);
-                }
-                else
-                {
-                    st1 = stringAdd(pString, temp);
-                }
-
-                if (st1 == -1)
-                {
-                    printf("[ERROR] : Function stringSet failed | stringReplace \n");
-                    return -1;
-                }
-
-                matchCounter++;
+                len += lengthSrc;
+                i += lengthDest - 1;
+                free(temp);
+                continue;
             }
-            else if (matchCounter < lengthDest)
-            {
-                int st2 = stringRemove(pString, i);
+            free(temp);
+        }
+        len++;
+    }
 
-                if (st2 == -1)
-                {
-                    printf("[ERROR] : Function stringRemove failed | stringReplace \n");
-                    return -1;
-                }
+    len++;
 
-                i--;
-                matchCounter++;
-            }
+    char *newString = (char *)malloc(sizeof(char) * len);
 
-            else if (matchCounter < lengthSrc)
-            {
-                char temp = stringGet(pStringSrc, matchCounter);
+    for (int i = 0, j = 0; i < len; i++, j++)
+    {
+        int end = j + lengthDest - 1;
 
-                if (temp == -1)
-                {
-                    printf("[ERROR] : Function stringGet failed | stringReplace \n");
-                    return -1;
-                }
-
-                int st3;
-                if (isIndexInBoundsString(pString, i))
-                {
-                    st3 = stringAddIndex(pString, temp, i);
-                }
-                else
-                {
-                    st3 = stringAdd(pString, temp);
-                }
-
-                if (st3 == -1)
-                {
-                    printf("[ERROR] : Function stringSet failed | stringReplace \n");
-                    return -1;
-                }
-
-                matchCounter++;
-            }
-            else
-            {
-                isMatch = false;
-                matchCounter = 0;
-                i--;
-            }
+        if (!isIndexInBoundsString(pString, end))
+        {
+            newString[i] = pString[j];
         }
         else
         {
-            int end = i + lengthDest - 1;
+            char *temp = stringSub(pString, j, end);
 
-            if (!isIndexInBoundsString(pString, end))
+            if (strcmp(pStringDest, temp) == 0)
             {
-                return 0;
+                for (int k = 0; k < lengthSrc; k++)
+                {
+                    newString[i] = pStringSrc[k];
+                    i++;
+                }
+                i--;
+                j += lengthDest - 1;
             }
             else
             {
-                String *sub = stringSub(pString, i, end);
-
-                if (sub == NULL)
-                {
-                    printf("[ERROR] : Function stringSub failed | stringReplace \n");
-                    return -1;
-                }
-
-                if (stringEquals(pStringDest, sub))
-                {
-                    isMatch = true;
-                    i--;
-                }
-
-                stringFree(sub);
+                newString[i] = pString[j];
             }
+            free(temp);
         }
     }
-    return 0;
+
+    free(pString);
+
+    return newString;
 }

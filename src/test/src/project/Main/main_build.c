@@ -23,7 +23,10 @@
  * @return true if c is in arr, false if c is not in arr
  */
 
-bool utilIsInArray(char *arr, int length, int c);
+ bool utilIsInArray(char *arr, int length, int c);
+
+
+ int x = 10;
 
 
 
@@ -81,7 +84,7 @@ void build(char *path, bool debug)
             return;
         }
 
-        String *binDirPath = stringCreate(entryGetPath(bin));
+        char *binDirPath = stringCreate(entryGetPath(bin));
 
         Entry *builderFile = directoryGetEntry(dir, "cbuilderfile", TYPE_FILE);
 
@@ -116,45 +119,37 @@ void build(char *path, bool debug)
         int fileCounter = 0;
         int alteredFiles = 0;
 
-        String *oFileList = compile(targetPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+        char *oFileList = compile(targetPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
 
         directoryFree(dir);
         entryFree(bin);
         entryFree(builderFile);
 
         char linkCommand[] = "link";
-        String *linkSystemCommand = stringCreate(NULL);
-        String *objFiles = stringCreate("$OBJFILES");
-        String *binPath = stringCreate("$BINPATH");
-        String *permission = stringCreate("chmod a+x ");
+        char *linkSystemCommand = stringCreate(NULL);
+        char *objFiles = "$OBJFILES";
+        char *binPath = "$BINPATH";
+        char *permission = stringCreate("chmod a+x ");
 
-        stringCat(permission, binDirPath);
+        permission = stringCat(permission, binDirPath);
 
-        getCommand(linkCommand, builderFilePath, linkSystemCommand);
+        linkSystemCommand = getCommand(linkCommand, builderFilePath, linkSystemCommand);
 
-        stringReplace(linkSystemCommand, objFiles, oFileList);
-        stringReplace(linkSystemCommand, binPath, binDirPath);
+        linkSystemCommand = stringReplace(linkSystemCommand, objFiles, oFileList);
+        linkSystemCommand = stringReplace(linkSystemCommand, binPath, binDirPath);
 
-        char *tempLinkCmd = stringToArr(linkSystemCommand);
-        system(tempLinkCmd);
+        system(linkSystemCommand);
 
 #ifdef LINUX
-        char *tempPermissionCmd = stringToArr(permission);
-        system(tempPermissionCmd);
-        free(tempPermissionCmd);
+        system(permission);
 #elif defined(APPLE)
-        char *tempPermissionCmd = stringToArr(permission);
-        system(tempPermissionCmd);
-        free(tempPermissionCmd);
+        system(permission);
 #endif
-        free(tempLinkCmd);
 
-        stringFree(linkSystemCommand);
-        stringFree(objFiles);
-        stringFree(oFileList);
-        stringFree(binPath);
-        stringFree(binDirPath);
-        stringFree(permission);
+        free(linkSystemCommand);
+        free(oFileList);
+        free(binDirPath);
+        free(permission);
 
         char fileCounterC[16];
         char alteredFileCounterC[16];

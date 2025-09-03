@@ -23,7 +23,10 @@
  * @return true if c is in arr, false if c is not in arr
  */
 
-bool utilIsInArray(char *arr, int length, int c);
+ bool utilIsInArray(char *arr, int length, int c);
+
+
+ int x = 10;
 
 
 
@@ -64,7 +67,7 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
-String *utilGetName(char *name)
+char *utilGetName(char *name)
 {
     if (name == NULL)
     {
@@ -85,7 +88,8 @@ String *utilGetName(char *name)
         cpy[i] = name[i];
     }
     cpy[length] = '\0';
-    String *str = stringCreate(cpy);
+
+    char *str = stringCreate(cpy);
 
     return str;
 }

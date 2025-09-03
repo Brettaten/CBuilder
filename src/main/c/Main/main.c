@@ -24,6 +24,8 @@
  */
 bool utilIsInArray(char *arr, int length, int c);
 
+int x = 10;
+
 int main(int argc, char *argv[])
 {
 
@@ -466,7 +468,7 @@ void build(char *path, bool debug)
             return;
         }
 
-        String *binDirPath = stringCreate(entryGetPath(bin));
+        char *binDirPath = stringCreate(entryGetPath(bin));
 
         Entry *builderFile = directoryGetEntry(dir, "cbuilderfile", TYPE_FILE);
 
@@ -501,45 +503,37 @@ void build(char *path, bool debug)
         int fileCounter = 0;
         int alteredFiles = 0;
 
-        String *oFileList = compile(targetPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+        char *oFileList = compile(targetPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
 
         directoryFree(dir);
         entryFree(bin);
         entryFree(builderFile);
 
         char linkCommand[] = "link";
-        String *linkSystemCommand = stringCreate(NULL);
-        String *objFiles = stringCreate("$OBJFILES");
-        String *binPath = stringCreate("$BINPATH");
-        String *permission = stringCreate("chmod a+x ");
+        char *linkSystemCommand = stringCreate(NULL);
+        char *objFiles = "$OBJFILES";
+        char *binPath = "$BINPATH";
+        char *permission = stringCreate("chmod a+x ");
 
-        stringCat(permission, binDirPath);
+        permission = stringCat(permission, binDirPath);
 
-        getCommand(linkCommand, builderFilePath, linkSystemCommand);
+        linkSystemCommand = getCommand(linkCommand, builderFilePath, linkSystemCommand);
 
-        stringReplace(linkSystemCommand, objFiles, oFileList);
-        stringReplace(linkSystemCommand, binPath, binDirPath);
+        linkSystemCommand = stringReplace(linkSystemCommand, objFiles, oFileList);
+        linkSystemCommand = stringReplace(linkSystemCommand, binPath, binDirPath);
 
-        char *tempLinkCmd = stringToArr(linkSystemCommand);
-        system(tempLinkCmd);
+        system(linkSystemCommand);
 
 #ifdef LINUX
-        char *tempPermissionCmd = stringToArr(permission);
-        system(tempPermissionCmd);
-        free(tempPermissionCmd);
+        system(permission);
 #elif defined(APPLE)
-        char *tempPermissionCmd = stringToArr(permission);
-        system(tempPermissionCmd);
-        free(tempPermissionCmd);
+        system(permission);
 #endif
-        free(tempLinkCmd);
 
-        stringFree(linkSystemCommand);
-        stringFree(objFiles);
-        stringFree(oFileList);
-        stringFree(binPath);
-        stringFree(binDirPath);
-        stringFree(permission);
+        free(linkSystemCommand);
+        free(oFileList);
+        free(binDirPath);
+        free(permission);
 
         char fileCounterC[16];
         char alteredFileCounterC[16];
@@ -673,7 +667,7 @@ void testBuild(char *path)
         int fileCounter = 0;
         int alteredFiles = 0;
 
-        String *oFileList = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+        char *oFileList = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
 
         strcpy(srcPath, projectPath);
         strcpy(destPath, projectPath);
@@ -692,14 +686,14 @@ void testBuild(char *path)
     }
 }
 
-int getCommand(char *command, char *path, String *destCmd)
+char *getCommand(char *command, char *path, char *destCmd)
 {
     FILE *file = fopen(path, "r");
 
     if (file == NULL)
     {
         printf("[ERROR] : CBuilderfile could not be opened | getCommand \n");
-        return -1;
+        return NULL;
     }
 
     int c;
@@ -819,32 +813,32 @@ int getCommand(char *command, char *path, String *destCmd)
         free(cmd);
         free(tokenList);
         printf("[ERROR] : Could not read command from cbuilderfile | getCommand \n");
-        return -1;
+        return NULL;
     }
 
-    int st1 = stringClear(destCmd);
+    destCmd = stringClear(destCmd);
 
-    if (st1 == -1)
+    if (destCmd == NULL)
     {
         printf("[ERROR] : Function stringClear failed | getCommand \n");
-        return -1;
+        return NULL;
     }
 
     for (int i = 0; i < strlen(cmd); i++)
     {
-        int st2 = stringAdd(destCmd, cmd[i]);
+        destCmd = stringAdd(destCmd, cmd[i]);
 
-        if (st2 == -1)
+        if (destCmd == NULL)
         {
             printf("[ERROR] : Function stringAdd failed | getCommand \n");
-            return -1;
+            return NULL;
         }
     }
 
     free(cmd);
     free(tokenList);
 
-    return 0;
+    return destCmd;
 }
 
 bool isProject(Directory *dir)
@@ -1051,7 +1045,7 @@ bool utilIsInArray(char *arr, int length, int c)
     return false;
 }
 
-String *utilGetName(char *name)
+char *utilGetName(char *name)
 {
     if (name == NULL)
     {
@@ -1072,12 +1066,13 @@ String *utilGetName(char *name)
         cpy[i] = name[i];
     }
     cpy[length] = '\0';
-    String *str = stringCreate(cpy);
+
+    char *str = stringCreate(cpy);
 
     return str;
 }
 
-String *utilGetEx(char *name)
+char *utilGetEx(char *name)
 {
     if (name == NULL)
     {
@@ -1089,25 +1084,25 @@ String *utilGetEx(char *name)
     char ex[length];
     bool isExt = false;
 
-    String *str = stringCreate(NULL);
+    char *str = stringCreate(NULL);
 
     for (int i = 0; i < length; i++)
     {
         if (isExt)
         {
-            stringAdd(str, name[i]);
+            str = stringAdd(str, name[i]);
         }
         else if (name[i] == '.')
         {
             isExt = true;
-            stringAdd(str, name[i]);
+            str = stringAdd(str, name[i]);
         }
     }
 
     return str;
 }
 
-String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, int *fileCounter, int *alteredFiles)
+char *compile(char *destPath, char *srcPath, char *projectPath, bool debug, int *fileCounter, int *alteredFiles)
 {
     Directory *dir = directoryGet(projectPath);
 
@@ -1128,9 +1123,9 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
     char builderFilePath[MAX_LENGTH_PATH];
     strcpy(builderFilePath, entryGetPath(builderFile));
 
-    String *systemCommand = stringCreate(NULL);
-    String *cFile = stringCreate("$CFILE");
-    String *objFile = stringCreate("$OBJFILE");
+    char *systemCommand = stringCreate(NULL);
+    char *cFile = stringCreate("$CFILE");
+    char *objFile = stringCreate("$OBJFILE");
 
     char relTarget[MAX_LENGTH_PATH];
 
@@ -1145,9 +1140,9 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
         strcpy(command, "build");
     }
 
-    getCommand(command, builderFilePath, systemCommand);
+    systemCommand = getCommand(command, builderFilePath, systemCommand);
 
-    char *commandBluePrint = stringToArr(systemCommand);
+    char *commandBluePrint = stringCreate(systemCommand);
 
     directoryFree(dir);
     entryFree(builderFile);
@@ -1189,11 +1184,12 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
     *fileCounter = 0;
     *alteredFiles = 0;
 
-    String *oFileList = stringCreate(NULL);
-    String *delimiter = stringCreate(" ");
+    char *oFileList = stringCreate(NULL);
 
-    String *objType = stringCreate(".o");
-    String *cType = stringCreate(".c");
+    char *delimiter = " ";
+    char *objType = ".o";
+    char *cType = ".c";
+    char *slash = "/";
 
     while (stackLength(stackSrc) > 0)
     {
@@ -1216,16 +1212,15 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
                 return NULL;
             }
 
-            String *cPath = stringCreate(entryGetPath(tempEntrySrc));
-            String *name = utilGetName(entryGetName(tempEntrySrc));
-            String *type = utilGetEx(entryGetName(tempEntrySrc));
-            String *objPath = stringCreate(directoryGetPath(tempTarget));
-            String *objName = stringCopy(name);
-            stringCat(objName, objType);
-            String *slash = stringCreate("/");
-            stringCat(objPath, slash);
-            stringCat(objPath, name);
-            stringCat(objPath, objType);
+            char *cPath = stringCreate(entryGetPath(tempEntrySrc));
+            char *name = utilGetName(entryGetName(tempEntrySrc));
+            char *type = utilGetEx(entryGetName(tempEntrySrc));
+            char *objPath = stringCreate(directoryGetPath(tempTarget));
+            char *objName = stringCreate(name);
+            objName = stringCat(objName, objType);
+            objPath = stringCat(objPath, slash);
+            objPath = stringCat(objPath, name);
+            objPath = stringCat(objPath, objType);
 
             if (entryGetType(tempEntrySrc) == TYPE_DIRECTORY)
             {
@@ -1247,7 +1242,7 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
 
                 char temp[MAX_LENGTH_PATH];
                 strcpy(temp, directoryGetPath(tempTarget));
-                strcat(temp, "/");
+                strcat(temp, slash);
                 strcat(temp, entryGetName(tempEntrySrc));
 
                 Directory *newDirTarget = directoryGet(temp);
@@ -1265,16 +1260,14 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
                 directoryFree(newDirTarget);
             }
 
-            else if (stringEquals(type, cType))
+            else if (strcmp(type, cType) == 0)
             {
                 (*fileCounter)++;
 
-                char *tempObjName = stringToArr(objName);
-                Entry *tempEntryTarget = directoryGetEntry(tempTarget, tempObjName, TYPE_FILE);
-                free(tempObjName);
+                Entry *tempEntryTarget = directoryGetEntry(tempTarget, objName, TYPE_FILE);
 
-                stringReplace(systemCommand, cFile, cPath);
-                stringReplace(systemCommand, objFile, objPath);
+                systemCommand = stringReplace(systemCommand, cFile, cPath);
+                systemCommand = stringReplace(systemCommand, objFile, objPath);
 
                 if (tempEntryTarget != NULL && entryGetLastModified(tempEntryTarget) < entryGetLastModified(tempEntrySrc))
                 {
@@ -1287,37 +1280,32 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
                         printf("[ERROR] : Function remove failed | build \n");
                         return NULL;
                     }
-                    char *tempCmd = stringToArr(systemCommand);
-                    system(tempCmd);
-                    free(tempCmd);
+                    system(systemCommand);
                 }
                 else if (tempEntryTarget == NULL)
                 {
                     (*alteredFiles)++;
 
-                    char *tempCmd = stringToArr(systemCommand);
-                    system(tempCmd);
-                    free(tempCmd);
+                    system(systemCommand);
                 }
 
                 if (tempEntryTarget != NULL)
                 {
                     entryFree(tempEntryTarget);
                 }
-                stringFree(systemCommand);
+                free(systemCommand);
                 systemCommand = stringCreate(commandBluePrint);
 
-                stringCat(oFileList, objPath);
-                stringCat(oFileList, delimiter);
+                oFileList = stringCat(oFileList, objPath);
+                oFileList = stringCat(oFileList, delimiter);
             }
 
             entryFree(tempEntrySrc);
-            stringFree(cPath);
-            stringFree(objPath);
-            stringFree(objName);
-            stringFree(type);
-            stringFree(name);
-            stringFree(slash);
+            free(cPath);
+            free(objPath);
+            free(objName);
+            free(type);
+            free(name);
         }
 
         for (int i = 0; i < directoryGetEntryAmount(tempTarget); i++)
@@ -1339,25 +1327,25 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
                     }
                     else if ((entryGetType(entryTarget) == TYPE_FILE))
                     {
-                        String *targetName = utilGetName(entryGetName(entryTarget));
-                        String *targetEx = utilGetEx(entryGetName(entryTarget));
-                        String *srcName = utilGetName(entryGetName(entrySrc));
-                        String *srcEx = utilGetEx(entryGetName(entrySrc));
+                        char *targetName = utilGetName(entryGetName(entryTarget));
+                        char *targetEx = utilGetEx(entryGetName(entryTarget));
+                        char *srcName = utilGetName(entryGetName(entrySrc));
+                        char *srcEx = utilGetEx(entryGetName(entrySrc));
 
-                        if (stringEquals(targetName, srcName) && stringEquals(targetEx, objType) && stringEquals(srcEx, cType))
+                        if (strcmp(targetName, srcName) == 0 && strcmp(targetEx, objType) == 0 && strcmp(srcEx, cType) == 0)
                         {
-                            stringFree(targetName);
-                            stringFree(targetEx);
-                            stringFree(srcName);
-                            stringFree(srcEx);
-                            entryFree(entrySrc);
+                            free(targetName);
+                            free(targetEx);
+                            free(srcName);
+                            free(srcEx);
+                            free(entrySrc);
                             doesExist = true;
                             break;
                         }
-                        stringFree(targetName);
-                        stringFree(targetEx);
-                        stringFree(srcName);
-                        stringFree(srcEx);
+                        free(targetName);
+                        free(targetEx);
+                        free(srcName);
+                        free(srcEx);
                     }
                 }
                 entryFree(entrySrc);
@@ -1387,12 +1375,9 @@ String *compile(char *destPath, char *srcPath, char *projectPath, bool debug, in
     }
     stackFree(stackSrc);
     stackFree(stackTarget);
-    stringFree(systemCommand);
-    stringFree(cFile);
-    stringFree(objFile);
-    stringFree(objType);
-    stringFree(cType);
-    stringFree(delimiter);
+    free(systemCommand);
+    free(cFile);
+    free(objFile);
     free(commandBluePrint);
 
     int fileCounterTemp = *fileCounter;

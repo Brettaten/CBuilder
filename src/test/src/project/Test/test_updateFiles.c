@@ -29,7 +29,7 @@ enum TYPE
  * @return Success: 0 | Failure: -1
  */
 
-int updateFiles(List *splitFiles, String *token);
+int updateFiles(List *splitFiles, char *token);
 
 
 /**
@@ -40,7 +40,7 @@ int updateFiles(List *splitFiles, String *token);
  * @return Success: the name
  */
 
-String *getFunctionName(String *func);
+char *getFunctionName(char *func);
 
 
 /**
@@ -57,7 +57,7 @@ void utilConcatenateLists(List *dest, List *src);
 
 
 
-int updateFiles(List *splitFiles, String *token)
+int updateFiles(List *splitFiles, char *token)
 {
     if (splitFiles == NULL)
     {
@@ -73,13 +73,13 @@ int updateFiles(List *splitFiles, String *token)
 
     for (int i = 0; i < listLength(splitFiles); i++)
     {
-        String *temp = listGet(splitFiles, i);
+        char *temp = listGet(splitFiles, i);
 
-        stringCat(temp, token);
+        temp = stringCat(temp, token);
 
         listSet(splitFiles, temp, i);
 
-        stringFree(temp);
+        free(temp);
     }
     return 0;
 }

@@ -5,12 +5,6 @@
 #include "string.h"
 #include "../List/list.h"
 
-typedef struct String
-{
-    List *list;
-} String;
-
-
 /**
  * Function used determine whether an index is in bounds
  *
@@ -20,7 +14,7 @@ typedef struct String
  * @return true or false
  */
 
-bool isIndexInBoundsString(String *pString, int index);
+bool isIndexInBoundsString(char *pString, int index);
 
 
 
@@ -37,11 +31,7 @@ bool isIndexInBoundsString(String *pString, int index);
 
 
 
-
-
-
-
-String *stringSub(String *pString, int beginning, int end)
+char *stringSub(char *pString, int beginning, int end)
 {
     if (pString == NULL)
     {
@@ -61,34 +51,16 @@ String *stringSub(String *pString, int beginning, int end)
         return NULL;
     }
 
-    String *stringNew = stringCreate(NULL);
-
-    if (stringNew == NULL)
-    {
-        printf("[ERROR] : Function stringCreate failed | stringSub \n");
-        return NULL;
-    }
-
     int length = end - beginning + 1;
 
-    for (int i = beginning; i < beginning + length; i++)
+    char *stringNew = (char *)malloc((sizeof(char) * length) + 1);
+
+    for (int i = beginning, j = 0; i < beginning + length; i++, j++)
     {
-        char temp = stringGet(pString, i);
-
-        if (temp == -1)
-        {
-            printf("[ERROR] : Function stringGet failed | stringSub \n");
-            return NULL;
-        }
-
-        int st1 = stringAdd(stringNew, temp);
-
-        if (st1 == -1)
-        {
-            printf("[ERROR] : Function stringAdd failed | stringSub \n");
-            return NULL;
-        }
+        stringNew[j] = pString[i];
     }
+
+    stringNew[length] = '\0';
 
     return stringNew;
 }

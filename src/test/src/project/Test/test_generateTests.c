@@ -29,7 +29,7 @@ enum TYPE
  * @return Success: 0 | Failure: -1
  */
 
-int updateFiles(List *splitFiles, String *token);
+int updateFiles(List *splitFiles, char *token);
 
 
 /**
@@ -40,7 +40,7 @@ int updateFiles(List *splitFiles, String *token);
  * @return Success: the name
  */
 
-String *getFunctionName(String *func);
+char *getFunctionName(char *func);
 
 
 /**
@@ -70,7 +70,7 @@ void generateTests(char *destPath, char *srcPath)
 
     if (srcDir == NULL || destDir == NULL)
     {
-        printf("[ERROR] : Directory could not be found | copyProject \n");
+        printf("[ERROR] : Directory could not be found | generateTests \n");
         return;
     }
 
@@ -79,7 +79,7 @@ void generateTests(char *destPath, char *srcPath)
 
     if (stackSrc == NULL || stackDest == NULL)
     {
-        printf("[ERROR] : function stackCreate failed | copyProject \n");
+        printf("[ERROR] : function stackCreate failed | generateTests \n");
         return;
     }
 
@@ -89,7 +89,7 @@ void generateTests(char *destPath, char *srcPath)
     directoryFree(srcDir);
     directoryFree(destDir);
 
-    String *cExt = stringCreate(".c");
+    char *cExt = stringCreate(".c");
 
     while (stackLength(stackSrc) > 0)
     {
@@ -99,11 +99,11 @@ void generateTests(char *destPath, char *srcPath)
 
         if (tempDirSrc == NULL || tempDirDest == NULL)
         {
-            printf("[ERROR] : Function stackPop failed | copyProject \n");
+            printf("[ERROR] : Function stackPop failed | generateTests \n");
             return;
         }
 
-        List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
+        List *fileNames = listCreate(sizeof(char *), &stringCopy, NULL);
 
         for (int i = 0; i < directoryGetEntryAmount(tempDirSrc); i++)
         {
@@ -112,7 +112,7 @@ void generateTests(char *destPath, char *srcPath)
 
             if (entrySrc == NULL)
             {
-                printf("[ERROR] : function directoryGetEntryAt failed | copyProject \n");
+                printf("[ERROR] : function directoryGetEntryAt failed | generateTests \n");
                 return;
             }
 
@@ -123,7 +123,7 @@ void generateTests(char *destPath, char *srcPath)
 
                 if (newSrc == NULL)
                 {
-                    printf("[ERROR] : function directoryGet failed | copyProject \n");
+                    printf("[ERROR] : function directoryGet failed | generateTests \n");
                     return;
                 }
 
@@ -131,7 +131,7 @@ void generateTests(char *destPath, char *srcPath)
 
                 if (st1 == false)
                 {
-                    printf("[ERROR] : Function directoryCreate failed | build \n");
+                    printf("[ERROR] : Function directoryCreate failed | generateTests \n");
                     return;
                 }
 
@@ -144,7 +144,7 @@ void generateTests(char *destPath, char *srcPath)
 
                 if (newDest == NULL)
                 {
-                    printf("[ERROR] : Function directoryGet failed | build \n");
+                    printf("[ERROR] : Function directoryGet failed | generateTests \n");
                     return;
                 }
 
@@ -158,55 +158,14 @@ void generateTests(char *destPath, char *srcPath)
             else
             {
 
-                String *extension = utilGetEx(entryGetName(entrySrc));
-                String *name = utilGetName(entryGetName(entrySrc));
+                char *extension = utilGetEx(entryGetName(entrySrc));
+                char *name = utilGetName(entryGetName(entrySrc));
+                char *prefix = stringSub(name, 0, 3);
+                char *test = stringCreate("test");
 
                 Entry *entryDest = directoryGetEntry(tempDirDest, entryGetName(entrySrc), TYPE_FILE);
 
-                if (stringEquals(extension, cExt))
-                {
-                    int delete = 2;
-                    for (int i = 0; i < directoryGetEntryAmount(tempDirDest); i++)
-                    {
-                        Entry *tempEntryDest = directoryGetEntryAt(tempDirDest, i);
-                        String *tempName = stringCreate(entryGetName(tempEntryDest));
-                        String *subName = stringSub(name, 0, stringLength(name) - 1);
-                        String *tempEx = utilGetEx(stringToArr(tempName));
-
-                        if (stringEquals(subName, name) && stringEquals(tempEx, cExt))
-                        {
-                            if (delete == 0)
-                            {
-                                remove(entryGetPath(tempEntryDest));
-                            }
-                            else if (entryGetLastModified(tempEntryDest) > entryGetLastModified(entrySrc))
-                            {
-                                delete = 1;
-                                entryFree(tempEntryDest);
-                                stringFree(tempName);
-                                stringFree(subName);
-                                stringFree(tempEx);
-                                break;
-                            }
-                            else
-                            {
-                                delete = 0;
-                                remove(entryGetPath(tempEntryDest));
-                            }
-                        }
-
-                        entryFree(tempEntryDest);
-                        stringFree(tempName);
-                        stringFree(subName);
-                        stringFree(tempEx);
-                    }
-
-                    if (delete == 2 || delete == 0)
-                    {
-                        splitFile(entrySrc, tempDirDest);
-                    }
-                }
-                else if (entryDest == NULL || entryGetLastModified(entryDest) < entryGetLastModified(entrySrc))
+                if (entryDest == NULL || entryGetLastModified(entryDest) < entryGetLastModified(entrySrc))
                 {
                     char dest[MAX_LENGTH_PATH];
                     strcpy(dest, directoryGetPath(tempDirDest));
@@ -217,13 +176,20 @@ void generateTests(char *destPath, char *srcPath)
 
                     if (st2 == false)
                     {
-                        printf("[ERROR] : function fileCopy failed | copyProject \n");
+                        printf("[ERROR] : function fileCopy failed | generateTests \n");
                         return;
+                    }
+
+                    if (strcmp(prefix, test) == 0)
+                    {
                     }
                 }
 
-                stringFree(extension);
-                stringFree(name);
+                free(extension);
+                free(name);
+                free(prefix);
+                free(test);
+
                 if (entryDest != NULL)
                 {
                     entryFree(entryDest);
@@ -256,20 +222,20 @@ void generateTests(char *destPath, char *srcPath)
 
             else
             {
-                String *name = stringCreate(entryGetName(entryTarget));
+                char *name = stringCreate(entryGetName(entryTarget));
 
                 for (int i = 0; i < listLength(fileNames); i++)
                 {
-                    String *temp = listGet(fileNames, i);
-                    if (stringEquals(name, temp))
+                    char *temp = listGet(fileNames, i);
+                    if (strcmp(name, temp) == 0)
                     {
-                        stringFree(temp);
+                        free(temp);
                         doesExist = true;
                         break;
                     }
-                    stringFree(temp);
+                    free(temp);
                 }
-                stringFree(name);
+                free(name);
             }
 
             if (!doesExist)
@@ -295,7 +261,7 @@ void generateTests(char *destPath, char *srcPath)
         directoryFree(tempDirDest);
         listFree(fileNames);
     }
-    stringFree(cExt);
+    free(cExt);
 
     stackFree(stackSrc);
     stackFree(stackDest);

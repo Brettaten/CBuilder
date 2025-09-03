@@ -27,7 +27,7 @@ enum TYPE
  *
  * @return Success: 0 | Failure: -1
  */
-int updateFiles(List *splitFiles, String *token);
+int updateFiles(List *splitFiles, char *token);
 
 /**
  * Function used to get the name of a function
@@ -36,7 +36,7 @@ int updateFiles(List *splitFiles, String *token);
  *
  * @return Success: the name
  */
-String *getFunctionName(String *func);
+char *getFunctionName(char *func);
 
 /**
  * Function used to concatenate two lists that contain strings
@@ -68,16 +68,16 @@ void splitFile(Entry *src, Directory *dest)
         return;
     }
 
-    String *preSet = stringCreate(NULL);
-    String *token = stringCreate(NULL);
-    String *currToken = stringCreate(NULL);
+    char *preSet = stringCreate(NULL);
+    char *token = stringCreate(NULL);
+    char *currToken = stringCreate(NULL);
 
-    String *structStr = stringCreate("struct");
+    char *structStr = stringCreate("struct");
 
-    List *splitFiles = listCreate(stringSize(), &stringCopy, &stringFree);
-    List *funcNames = listCreate(stringSize(), &stringCopy, &stringFree);
+    List *splitFiles = listCreate(sizeof(char *), &stringCopy, NULL);
+    List *funcNames = listCreate(sizeof(char *), &stringCopy, NULL);
 
-    int type;
+    int type = OTHER;
     int funcCounter;
     int lastC;
     int c;
@@ -86,73 +86,147 @@ void splitFile(Entry *src, Directory *dest)
     {
         if (type == OTHER)
         {
-            if (stringLength(token) == 0 && !isspace(c))
+            if (strlen(currToken) == 0 && strlen(token) == 0 && !isspace(c))
             {
-                stringClear(currToken);
+                currToken = stringClear(currToken);
+                currToken = stringAdd(currToken, c);
                 if (c == '#')
                 {
                     type = MACRO;
+                    token = stringCat(token, currToken);
                 }
                 else if (c == '/')
                 {
-                    stringAdd(token, c);
-                    stringAdd(currToken, c);
                     c = getc(srcFile);
+                    currToken = stringAdd(currToken, c);
 
                     if (c == '/')
                     {
                         type = COMMENT;
+                        token = stringCat(token, currToken);
                     }
                     else if (c == '*')
                     {
                         type = MULTI_COMMENT;
+                        token = stringCat(token, currToken);
                     }
                 }
-                stringAdd(token, c);
-                stringAdd(currToken, c);
+                lastC = c;
             }
-            else if (stringLength(token) == 0 && isspace(c))
+            else if (strlen(currToken) == 0 && isspace(c))
             {
-                stringAdd(preSet, c);
+                preSet = stringAdd(preSet, c);
             }
             else
             {
                 if (!isspace(c))
                 {
-                    stringAdd(token, c);
-                    stringAdd(currToken, c);
+                    if (c == ';')
+                    {
+                        currToken = stringAdd(currToken, c);
+                        if (lastC == ')')
+                        {
+                            token = stringCat(token, currToken);
+                            type = OTHER;
+                            token = stringAdd(token, '\n');
+                            updateFiles(splitFiles, token);
+                            preSet = stringCat(preSet, token);
+                            token = stringClear(token);
+                            currToken = stringClear(currToken);
+                        }
+                        else
+                        {
+                            token = stringCat(token, currToken);
+                            type = OTHER;
+                            token = stringAdd(token, '\n');
+                            updateFiles(splitFiles, token);
+                            preSet = stringCat(preSet, token);
+                            token = stringClear(token);
+                            currToken = stringClear(currToken);
+                        }
+                    }
+                    else if (c == '{' && lastC == ')')
+                    {
+                        currToken = stringAdd(currToken, c);
+
+                        token = stringCat(token, currToken);
+                        type = FUNCTION;
+                        funcCounter = 0;
+                    }
+                    else
+                    {
+                        currToken = stringAdd(currToken, c);
+                        lastC = c;
+                    }
                 }
                 if (isspace(c))
                 {
-                    stringAdd(token, c);
+                    if (strcmp(currToken, "struct") == 0)
+                    {
+                        type = STRUCT;
+                        funcCounter = 0;
+                        currToken = stringAdd(currToken, c);
+                        token = stringCat(token, currToken);
+                    }
+                    else if (strcmp(currToken, "union") == 0)
+                    {
+                        type = STRUCT;
+                        funcCounter = 0;
+                        currToken = stringAdd(currToken, c);
+                        token = stringCat(token, currToken);
+                    }
+                    else if (strcmp(currToken, "enum") == 0)
+                    {
+                        type = STRUCT;
+                        funcCounter = 0;
+                        currToken = stringAdd(currToken, c);
+                        token = stringCat(token, currToken);
+                    }
+                    else if (strcmp(currToken, "static") == 0)
+                    {
+                        currToken = stringClear(currToken);
+                        token = stringAdd(token, c);
+                    }
+                    else
+                    {
+                        token = stringCat(token, currToken);
+                        currToken = stringClear(currToken);
+                        token = stringAdd(token, c);
+                    }
                 }
             }
         }
         else if (type == MACRO)
         {
-            stringAdd(token, c);
+            token = stringAdd(token, c);
 
             if (c == '\n')
             {
                 updateFiles(splitFiles, token);
-                stringCat(preSet, token);
-                stringClear(token);
+                preSet = stringCat(preSet, token);
+                token = stringClear(token);
+                currToken = stringClear(currToken);
+
+                type = OTHER;
             }
         }
         else if (type == COMMENT)
         {
-            stringAdd(token, c);
+            token = stringAdd(token, c);
 
             if (c == '\n')
             {
                 updateFiles(splitFiles, token);
-                stringCat(preSet, token);
-                stringClear(token);
+                preSet = stringCat(preSet, token);
+                token = stringClear(token);
+                currToken = stringClear(currToken);
+
+                type = OTHER;
             }
         }
         else if (type == MULTI_COMMENT)
         {
-            stringAdd(token, c);
+            token = stringAdd(token, c);
 
             if (c == '*')
             {
@@ -160,49 +234,22 @@ void splitFile(Entry *src, Directory *dest)
 
                 if (c == '/')
                 {
-                    stringAdd(token, c);
-                    stringAdd(token, '\n');
+                    token = stringAdd(token, c);
+                    token = stringAdd(token, '\n');
                     updateFiles(splitFiles, token);
-                    stringCat(preSet, token);
-                    stringClear(token);
+                    preSet = stringCat(preSet, token);
+                    token = stringClear(token);
+                    currToken = stringClear(currToken);
+
+                    type = OTHER;
                     continue;
                 }
-                stringAdd(token, c);
-            }
-        }
-        else if (type == OTHER)
-        {
-            stringAdd(token, c);
-
-            if (c == ';')
-            {
-                stringAdd(token, '\n');
-                updateFiles(splitFiles, token);
-                stringCat(preSet, token);
-                stringClear(token);
-            }
-            else if (c == '{')
-            {
-                if (lastC == ')')
-                {
-                    type = FUNCTION;
-                    funcCounter = 0;
-                }
-                else
-                {
-                    funcCounter = 0;
-                    type = STRUCT;
-                }
-            }
-
-            if (!isspace(c))
-            {
-                lastC = c;
+                token = stringAdd(token, c);
             }
         }
         else if (type == FUNCTION)
         {
-            stringAdd(token, c);
+            token = stringAdd(token, c);
 
             if (c == '{')
             {
@@ -214,20 +261,21 @@ void splitFile(Entry *src, Directory *dest)
 
                 if (funcCounter < 0)
                 {
-                    stringAdd(token, '\n');
-                    String *tempFile = stringCreate(stringToArr(preSet));
-                    stringCat(tempFile, token);
+                    token = stringAdd(token, '\n');
+                    char *tempFile = stringCreate(preSet);
+                    tempFile = stringCat(tempFile, token);
 
-                    String *tempName = getFunctionName(token);
+                    char *tempName = getFunctionName(token);
 
                     listAdd(funcNames, tempName);
-                    stringFree(tempName);
+                    free(tempName);
 
-                    stringClear(token);
+                    token = stringClear(token);
+                    currToken = stringClear(currToken);
 
                     listAdd(splitFiles, tempFile);
 
-                    stringFree(tempFile);
+                    free(tempFile);
 
                     type = OTHER;
                 }
@@ -235,51 +283,50 @@ void splitFile(Entry *src, Directory *dest)
         }
         else if (type == STRUCT)
         {
-            stringAdd(token, c);
+            token = stringAdd(token, c);
             if (c == '}')
             {
                 funcCounter = -1;
             }
             else if (c == ';' && funcCounter == -1)
             {
-                stringAdd(token, '\n');
+                token = stringAdd(token, '\n');
                 updateFiles(splitFiles, token);
-                stringCat(preSet, token);
-                stringClear(token);
+                preSet = stringCat(preSet, token);
+                token = stringClear(token);
+                currToken = stringClear(currToken);
+
+                type = OTHER;
             }
         }
     }
     fclose(srcFile);
 
-    stringFree(preSet);
-    stringFree(token);
-    stringFree(currToken);
+    free(preSet);
+    free(token);
+    free(currToken);
 
-    String *separator = stringCreate("_");
-    String *pathSeparator = stringCreate("/");
-    String *name = utilGetName(entryGetName(src));
-    String *cEx = stringCreate(".c");
-    String *main = stringCreate("main");
+    char *name = utilGetName(entryGetName(src));
 
     for (int i = 0; i < listLength(splitFiles); i++)
     {
-        String *func = listGet(splitFiles, i);
+        char *func = listGet(splitFiles, i);
 
-        String *funcName = listGet(funcNames, i);
+        char *funcName = listGet(funcNames, i);
 
-        if (stringEquals(funcName, main))
+        if (strcmp(funcName, "main") == 0)
         {
             continue;
         }
 
-        String *filePath = stringCreate(directoryGetPath(dest));
-        stringCat(filePath, pathSeparator);
-        stringCat(filePath, name);
-        stringCat(filePath, separator);
-        stringCat(filePath, funcName);
-        stringCat(filePath, cEx);
+        char *filePath = stringCreate(directoryGetPath(dest));
+        filePath = stringCat(filePath, "/");
+        filePath = stringCat(filePath, name);
+        filePath = stringCat(filePath, "_");
+        filePath = stringCat(filePath, funcName);
+        filePath = stringCat(filePath, ".c");
 
-        FILE *tempFile = fopen(stringToArr(filePath), "w");
+        FILE *tempFile = fopen(filePath, "w");
 
         if (tempFile == NULL)
         {
@@ -289,24 +336,20 @@ void splitFile(Entry *src, Directory *dest)
 
         int c;
 
-        for (int j = 0; j < stringLength(func); j++)
+        for (int j = 0; j < strlen(func); j++)
         {
-            c = stringGet(func, j);
+            c = func[j];
 
             putc(c, tempFile);
         }
 
-        stringFree(funcName);
-        stringFree(filePath);
-        stringFree(func);
+        free(funcName);
+        free(filePath);
+        free(func);
         fclose(tempFile);
     }
 
-    stringFree(separator);
-    stringFree(main);
-    stringFree(cEx);
-    stringFree(pathSeparator);
-    stringFree(name);
+    free(name);
     listFree(funcNames);
     listFree(splitFiles);
 }
@@ -327,10 +370,10 @@ List *getFileNames(Entry *src)
         return NULL;
     }
 
-    String *preSet = stringCreate(NULL);
-    String *token = stringCreate(NULL);
+    char *preSet = stringCreate(NULL);
+    char *token = stringCreate(NULL);
 
-    List *funcNames = listCreate(stringSize(), &stringCopy, &stringFree);
+    List *funcNames = listCreate(sizeof(char *), &stringCopy, NULL);
 
     int type;
     int funcCounter;
@@ -339,7 +382,7 @@ List *getFileNames(Entry *src)
 
     while ((c = getc(srcFile)) != EOF)
     {
-        if (stringLength(token) == 0 && isspace(c) == false)
+        if (strlen(token) == 0 && isspace(c) == false)
         {
             if (c == '#')
             {
@@ -347,7 +390,7 @@ List *getFileNames(Entry *src)
             }
             else if (c == '/')
             {
-                stringAdd(token, c);
+                token = stringAdd(token, c);
                 c = getc(srcFile);
 
                 if (c == '/')
@@ -363,9 +406,9 @@ List *getFileNames(Entry *src)
             {
                 type = OTHER;
             }
-            stringAdd(token, c);
+            token = stringAdd(token, c);
         }
-        else if (stringLength(token) == 0 && isspace(c))
+        else if (strlen(token) == 0 && isspace(c))
         {
             ;
         }
@@ -373,7 +416,7 @@ List *getFileNames(Entry *src)
         {
             if (c == '\n')
             {
-                stringClear(token);
+                token = stringClear(token);
             }
         }
         else if (type == COMMENT)
@@ -381,7 +424,7 @@ List *getFileNames(Entry *src)
 
             if (c == '\n')
             {
-                stringClear(token);
+                token = stringClear(token);
             }
         }
         else if (type == MULTI_COMMENT)
@@ -393,18 +436,18 @@ List *getFileNames(Entry *src)
 
                 if (c == '/')
                 {
-                    stringClear(token);
+                    token = stringClear(token);
                     continue;
                 }
             }
         }
         else if (type == OTHER)
         {
-            stringAdd(token, c);
+            token = stringAdd(token, c);
 
             if (c == ';')
             {
-                stringClear(token);
+                token = stringClear(token);
             }
             else if (c == '{')
             {
@@ -427,7 +470,7 @@ List *getFileNames(Entry *src)
         }
         else if (type == FUNCTION)
         {
-            stringAdd(token, c);
+            token = stringAdd(token, c);
 
             if (c == '{')
             {
@@ -439,12 +482,12 @@ List *getFileNames(Entry *src)
 
                 if (funcCounter < 0)
                 {
-                    String *tempName = getFunctionName(token);
+                    char *tempName = getFunctionName(token);
 
                     listAdd(funcNames, tempName);
-                    stringFree(tempName);
+                    free(tempName);
 
-                    stringClear(token);
+                    token = stringClear(token);
                 }
             }
         }
@@ -456,55 +499,55 @@ List *getFileNames(Entry *src)
             }
             else if (c == ';' && funcCounter == -1)
             {
-                stringClear(token);
+                token = stringClear(token);
             }
         }
     }
     fclose(srcFile);
 
-    stringFree(preSet);
-    stringFree(token);
+    free(preSet);
+    free(token);
 
-    String *separator = stringCreate("_");
-    String *pathSeparator = stringCreate("/");
-    String *name = utilGetName(entryGetName(src));
-    String *cEx = stringCreate(".c");
-    String *main = stringCreate("main");
+    char *separator = stringCreate("_");
+    char *pathSeparator = stringCreate("/");
+    char *name = utilGetName(entryGetName(src));
+    char *cEx = stringCreate(".c");
+    char *main = stringCreate("main");
 
-    List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
+    List *fileNames = listCreate(sizeof(char *), &stringCopy, NULL);
 
     for (int i = 0; i < listLength(funcNames); i++)
     {
-        String *funcName = listGet(funcNames, i);
+        char *funcName = listGet(funcNames, i);
 
-        if (stringEquals(funcName, main))
+        if (strcmp(funcName, main) == 0)
         {
             continue;
         }
 
-        String *filePath = stringCreate(NULL);
-        stringCat(filePath, name);
-        stringCat(filePath, separator);
-        stringCat(filePath, funcName);
-        stringCat(filePath, cEx);
+        char *filePath = stringCreate(NULL);
+        filePath = stringCat(filePath, name);
+        filePath = stringCat(filePath, separator);
+        filePath = stringCat(filePath, funcName);
+        filePath = stringCat(filePath, cEx);
 
         listAdd(fileNames, filePath);
 
-        stringFree(funcName);
-        stringFree(filePath);
+        free(funcName);
+        free(filePath);
     }
 
-    stringFree(separator);
-    stringFree(main);
-    stringFree(cEx);
-    stringFree(pathSeparator);
-    stringFree(name);
+    free(separator);
+    free(main);
+    free(cEx);
+    free(pathSeparator);
+    free(name);
     listFree(funcNames);
 
     return fileNames;
 }
 
-int updateFiles(List *splitFiles, String *token)
+int updateFiles(List *splitFiles, char *token)
 {
     if (splitFiles == NULL)
     {
@@ -520,30 +563,30 @@ int updateFiles(List *splitFiles, String *token)
 
     for (int i = 0; i < listLength(splitFiles); i++)
     {
-        String *temp = listGet(splitFiles, i);
+        char *temp = listGet(splitFiles, i);
 
-        stringCat(temp, token);
+        temp = stringCat(temp, token);
 
         listSet(splitFiles, temp, i);
 
-        stringFree(temp);
+        free(temp);
     }
     return 0;
 }
 
-String *getFunctionName(String *func)
+char *getFunctionName(char *func)
 {
-    String *token = stringCreate(NULL);
+    char *token = stringCreate(NULL);
     bool isName = false;
     int c;
 
-    for (int i = 0; i < stringLength(func); i++)
+    for (int i = 0; i < strlen(func); i++)
     {
-        c = stringGet(func, i);
+        c = func[i];
 
         if (isName)
         {
-            if (c == '*' && stringLength(token) == 0)
+            if (c == '*' && strlen(token) == 0)
             {
                 continue;
             }
@@ -553,29 +596,31 @@ String *getFunctionName(String *func)
             }
             else
             {
-                stringAdd(token, c);
+                token = stringAdd(token, c);
             }
         }
         else
         {
             if (isspace(c))
             {
-                if (stringLength(token) != 0)
+                if (strlen(token) != 0 && strcmp(token, "static") != 0 && strcmp(token, "extern") != 0 && strcmp(token, "inline") != 0 && strcmp(token, "_Noreturn") != 0)
                 {
-                    stringClear(token);
+                    token = stringClear(token);
                     isName = true;
+                }
+                else if (strcmp(token, "static") == 0 || strcmp(token, "extern") == 0 || strcmp(token, "inline") == 0 || strcmp(token, "_Noreturn") == 0)
+                {
+                    token = stringClear(token);
                 }
             }
             else
             {
-                stringAdd(token, c);
+                token = stringAdd(token, c);
             }
         }
     }
 
     return token;
-
-    return 0;
 }
 
 void copyProject(char *destPath, char *srcPath)
@@ -604,7 +649,7 @@ void copyProject(char *destPath, char *srcPath)
     directoryFree(srcDir);
     directoryFree(destDir);
 
-    String *cExt = stringCreate(".c");
+    char *cExt = stringCreate(".c");
 
     while (stackLength(stackSrc) > 0)
     {
@@ -618,7 +663,7 @@ void copyProject(char *destPath, char *srcPath)
             return;
         }
 
-        List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
+        List *fileNames = listCreate(sizeof(char *), &stringCopy, NULL);
 
         for (int i = 0; i < directoryGetEntryAmount(tempDirSrc); i++)
         {
@@ -673,12 +718,12 @@ void copyProject(char *destPath, char *srcPath)
             else
             {
 
-                String *extension = utilGetEx(entryGetName(entrySrc));
-                String *name = utilGetName(entryGetName(entrySrc));
+                char *extension = utilGetEx(entryGetName(entrySrc));
+                char *name = utilGetName(entryGetName(entrySrc));
 
                 Entry *entryDest = directoryGetEntry(tempDirDest, entryGetName(entrySrc), TYPE_FILE);
 
-                if (stringEquals(extension, cExt))
+                if (strcmp(extension, cExt) == 0)
                 {
                     List *tempFileNames = getFileNames(entrySrc);
 
@@ -693,32 +738,32 @@ void copyProject(char *destPath, char *srcPath)
                     int delete = 2;
                     for (int i = 0; i < listLength(tempFileNames); i++)
                     {
-                        String *fileName = listGet(fileNames, i);
+                        char *fileName = listGet(fileNames, i);
                         bool doesExist = false;
                         for (int j = 0; j < directoryGetEntryAmount(tempDirDest); j++)
                         {
                             Entry *tempEntryDest = directoryGetEntryAt(tempDirDest, j);
-                            String *tempName = stringCreate(entryGetName(tempEntryDest));
+                            char *tempName = stringCreate(entryGetName(tempEntryDest));
 
-                            if (stringEquals(tempName, fileName) && entryGetLastModified(tempEntryDest) > entryGetLastModified(entrySrc))
+                            if (strcmp(tempName, fileName) == 0 && entryGetLastModified(tempEntryDest) > entryGetLastModified(entrySrc))
                             {
                                 entryFree(tempEntryDest);
-                                stringFree(tempName);
+                                free(tempName);
                                 doesExist = true;
                                 break;
                             }
 
                             entryFree(tempEntryDest);
-                            stringFree(tempName);
+                            free(tempName);
                         }
 
                         if (!doesExist)
                         {
                             splitFile(entrySrc, tempDirDest);
-                            stringFree(fileName);
+                            free(fileName);
                             break;
                         }
-                        stringFree(fileName);
+                        free(fileName);
                     }
 
                     listFree(tempFileNames);
@@ -739,8 +784,8 @@ void copyProject(char *destPath, char *srcPath)
                     }
                 }
 
-                stringFree(extension);
-                stringFree(name);
+                free(extension);
+                free(name);
                 if (entryDest != NULL)
                 {
                     entryFree(entryDest);
@@ -753,7 +798,7 @@ void copyProject(char *destPath, char *srcPath)
         for (int i = 0; i < directoryGetEntryAmount(tempDirDest); i++)
         {
             Entry *entryTarget = directoryGetEntryAt(tempDirDest, i);
-            String *targetEx = utilGetEx(entryGetName(entryTarget));
+            char *targetEx = utilGetEx(entryGetName(entryTarget));
             bool doesExist = false;
 
             if (entryGetType(entryTarget) == TYPE_DIRECTORY)
@@ -774,22 +819,22 @@ void copyProject(char *destPath, char *srcPath)
 
             else
             {
-                if (stringEquals(targetEx, cExt))
+                if (strcmp(targetEx, cExt) == 0)
                 {
-                    String *name = stringCreate(entryGetName(entryTarget));
+                    char *name = stringCreate(entryGetName(entryTarget));
 
                     for (int i = 0; i < listLength(fileNames); i++)
                     {
-                        String *temp = listGet(fileNames, i);
-                        if (stringEquals(name, temp))
+                        char *temp = listGet(fileNames, i);
+                        if (strcmp(name, temp) == 0)
                         {
-                            stringFree(temp);
+                            free(temp);
                             doesExist = true;
                             break;
                         }
-                        stringFree(temp);
+                        free(temp);
                     }
-                    stringFree(name);
+                    free(name);
                 }
                 else
                 {
@@ -825,14 +870,14 @@ void copyProject(char *destPath, char *srcPath)
             }
 
             entryFree(entryTarget);
-            stringFree(targetEx);
+            free(targetEx);
         }
 
         directoryFree(tempDirSrc);
         directoryFree(tempDirDest);
         listFree(fileNames);
     }
-    stringFree(cExt);
+    free(cExt);
 
     stackFree(stackSrc);
     stackFree(stackDest);
@@ -864,7 +909,7 @@ void generateTests(char *destPath, char *srcPath)
     directoryFree(srcDir);
     directoryFree(destDir);
 
-    String *cExt = stringCreate(".c");
+    char *cExt = stringCreate(".c");
 
     while (stackLength(stackSrc) > 0)
     {
@@ -878,7 +923,7 @@ void generateTests(char *destPath, char *srcPath)
             return;
         }
 
-        List *fileNames = listCreate(stringSize(), &stringCopy, &stringFree);
+        List *fileNames = listCreate(sizeof(char *), &stringCopy, NULL);
 
         for (int i = 0; i < directoryGetEntryAmount(tempDirSrc); i++)
         {
@@ -933,10 +978,10 @@ void generateTests(char *destPath, char *srcPath)
             else
             {
 
-                String *extension = utilGetEx(entryGetName(entrySrc));
-                String *name = utilGetName(entryGetName(entrySrc));
-                String *prefix = stringSub(name, 0, 3);
-                String *test = stringCreate("test");
+                char *extension = utilGetEx(entryGetName(entrySrc));
+                char *name = utilGetName(entryGetName(entrySrc));
+                char *prefix = stringSub(name, 0, 3);
+                char *test = stringCreate("test");
 
                 Entry *entryDest = directoryGetEntry(tempDirDest, entryGetName(entrySrc), TYPE_FILE);
 
@@ -955,15 +1000,15 @@ void generateTests(char *destPath, char *srcPath)
                         return;
                     }
 
-                    if (stringEquals(prefix, test))
+                    if (strcmp(prefix, test) == 0)
                     {
                     }
                 }
 
-                stringFree(extension);
-                stringFree(name);
-                stringFree(prefix);
-                stringFree(test);
+                free(extension);
+                free(name);
+                free(prefix);
+                free(test);
 
                 if (entryDest != NULL)
                 {
@@ -997,20 +1042,20 @@ void generateTests(char *destPath, char *srcPath)
 
             else
             {
-                String *name = stringCreate(entryGetName(entryTarget));
+                char *name = stringCreate(entryGetName(entryTarget));
 
                 for (int i = 0; i < listLength(fileNames); i++)
                 {
-                    String *temp = listGet(fileNames, i);
-                    if (stringEquals(name, temp))
+                    char *temp = listGet(fileNames, i);
+                    if (strcmp(name, temp) == 0)
                     {
-                        stringFree(temp);
+                        free(temp);
                         doesExist = true;
                         break;
                     }
-                    stringFree(temp);
+                    free(temp);
                 }
-                stringFree(name);
+                free(name);
             }
 
             if (!doesExist)
@@ -1036,7 +1081,7 @@ void generateTests(char *destPath, char *srcPath)
         directoryFree(tempDirDest);
         listFree(fileNames);
     }
-    stringFree(cExt);
+    free(cExt);
 
     stackFree(stackSrc);
     stackFree(stackDest);
@@ -1047,8 +1092,8 @@ void utilConcatenateLists(List *dest, List *src)
 
     for (int i = 0; i < listLength(src); i++)
     {
-        String *temp = listGet(src, i);
+        char *temp = listGet(src, i);
         listAdd(dest, temp);
-        stringFree(temp);
+        free(temp);
     }
 }
