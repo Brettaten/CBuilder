@@ -309,7 +309,6 @@ void splitFile(Entry *src, Directory *dest)
     }
     fclose(srcFile);
 
-    free(preSet);
     free(token);
     free(currToken);
 
@@ -356,6 +355,35 @@ void splitFile(Entry *src, Directory *dest)
         fclose(tempFile);
     }
 
+    if (listLength(funcNames) == 0)
+    {
+
+        char *filePath = stringCreate(directoryGetPath(dest));
+        filePath = stringCat(filePath, "/");
+        filePath = stringCat(filePath, entryGetName(src));
+
+        FILE *tempFile = fopen(filePath, "w");
+
+        if (tempFile == NULL)
+        {
+            printf("[ERROR] : Could not open file | splitFile \n");
+            return;
+        }
+
+        int c;
+
+        for (int j = 0; j < strlen(preSet); j++)
+        {
+            c = preSet[j];
+
+            putc(c, tempFile);
+        }
+
+        free(filePath);
+        fclose(tempFile);
+    }
+
+    free(preSet);
     free(name);
     listFree(funcNames);
     listFree(splitFiles);

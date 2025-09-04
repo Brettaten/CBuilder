@@ -238,6 +238,16 @@ List *getFileNames(Entry *src)
         free(filePath);
     }
 
+    if (listLength(funcNames) == 0)
+    {
+
+        char *filePath = stringCreate(entryGetName(src));
+
+        listAdd(fileNames, filePath);
+
+        free(filePath);
+    }
+
     free(separator);
     free(main);
     free(cEx);

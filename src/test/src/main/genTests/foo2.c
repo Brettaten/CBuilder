@@ -1,7 +1,7 @@
 #include "test.h"
 #include <stdio.h>
 
-void testPrintHappyFlow(){
+void printHappyFlow(){
     int x = 10;
     printf("%d", x);
 }

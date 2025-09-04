@@ -176,7 +176,7 @@ void copyProject(char *destPath, char *srcPath)
                     int delete = 2;
                     for (int i = 0; i < listLength(tempFileNames); i++)
                     {
-                        char *fileName = listGet(fileNames, i);
+                        char *fileName = listGet(tempFileNames, i);
                         bool doesExist = false;
                         for (int j = 0; j < directoryGetEntryAmount(tempDirDest); j++)
                         {

@@ -89,6 +89,8 @@ void generateTests(char *destPath, char *srcPath)
     directoryFree(srcDir);
     directoryFree(destDir);
 
+    int testNum = 1;
+
     char *cExt = stringCreate(".c");
 
     while (stackLength(stackSrc) > 0)
@@ -102,8 +104,6 @@ void generateTests(char *destPath, char *srcPath)
             printf("[ERROR] : Function stackPop failed | generateTests \n");
             return;
         }
-
-        List *fileNames = listCreate(sizeof(char *), &stringCopy, NULL);
 
         for (int i = 0; i < directoryGetEntryAmount(tempDirSrc); i++)
         {
@@ -161,7 +161,6 @@ void generateTests(char *destPath, char *srcPath)
                 char *extension = utilGetEx(entryGetName(entrySrc));
                 char *name = utilGetName(entryGetName(entrySrc));
                 char *prefix = stringSub(name, 0, 3);
-                char *test = stringCreate("test");
 
                 Entry *entryDest = directoryGetEntry(tempDirDest, entryGetName(entrySrc), TYPE_FILE);
 
@@ -180,15 +179,82 @@ void generateTests(char *destPath, char *srcPath)
                         return;
                     }
 
-                    if (strcmp(prefix, test) == 0)
+                    if (strcmp(prefix, "test") == 0 && strcmp(extension, ".c") == 0)
                     {
+                        List *tempFuncNames = getFileNames(entrySrc);
+                        List *testFunc = listCreate(sizeof(char *), &stringCopy, NULL);
+
+                        for (int i = 0; i < listLength(tempFuncNames); i++)
+                        {
+                            char *temp = listGet(tempFuncNames, i);
+                            temp = stringSub(temp, 5, strlen(temp) - 3);
+
+                            if (temp == NULL)
+                            {
+                                printf("[ERROR] : function listGet failed | generateTests \n");
+                                return;
+                            }
+
+                            char *funcPrefix = stringSub(temp, 0, 3);
+
+                            if (strcmp(funcPrefix, "test") == 0 && strcmp(temp, entryGetName(entrySrc)) != 0)
+                            {
+                                listAdd(testFunc, temp);
+                            }
+
+                            free(funcPrefix);
+                            free(temp);
+                        }
+
+                        FILE *testFile = fopen(dest, "a");
+
+                        char *main = "\n#include <stdio.h>\n#include <time.h>\nint main(){\n";
+
+                        int c;
+                        for (int i = 0; i < strlen(main); i++)
+                        {
+                            c = main[i];
+                            putc(c, testFile);
+                        }
+
+                        char *template = stringCreate("\tprintf(\"TEST $NUM | $NAME\n\");\n\ttime_t before = time(NULL);\n\t$NAME();\n\ttime_t after = time(NULL);\n\ttime_t time = after - before;\n\tprintf(\"%ld\n\", time);\n");
+
+                        for (int i = 0; i < listLength(testFunc); i++)
+                        {
+                            char *func = listGet(testFunc, i);
+
+                            char *currTemplate = stringCreate(template);
+                            currTemplate = stringReplace(currTemplate, "$NAME", func);
+
+                            char num[20];
+                            sprintf(num, "%d", testNum);
+
+                            currTemplate = stringReplace(currTemplate, "$NUM", num);
+
+                            for (int j = 0; j < strlen(currTemplate); j++)
+                            {
+                                c = currTemplate[j];
+                                putc(c, testFile);
+                            }
+
+                            testNum++;
+
+                            free(func);
+                            free(currTemplate);
+                        }
+
+                        putc('}', testFile);
+
+                        free(template);
+                        listFree(tempFuncNames);
+                        listFree(testFunc);
+                        fclose(testFile);
                     }
                 }
 
                 free(extension);
                 free(name);
                 free(prefix);
-                free(test);
 
                 if (entryDest != NULL)
                 {
@@ -204,38 +270,29 @@ void generateTests(char *destPath, char *srcPath)
             Entry *entryTarget = directoryGetEntryAt(tempDirDest, i);
             bool doesExist = false;
 
-            if (entryGetType(entryTarget) == TYPE_DIRECTORY)
+            for (int j = 0; j < directoryGetEntryAmount(tempDirSrc); j++)
             {
-                for (int j = 0; j < directoryGetEntryAmount(tempDirSrc); j++)
-                {
-                    Entry *entrySrc = directoryGetEntryAt(tempDirSrc, j);
+                Entry *entrySrc = directoryGetEntryAt(tempDirSrc, j);
 
-                    if (entryGetType(entrySrc) == TYPE_DIRECTORY && strcmp(entryGetName(entryTarget), entryGetName(entrySrc)) == 0)
+                if (entryGetType(entryTarget) == entryGetType(entrySrc))
+                {
+                    if ((entryGetType(entryTarget) == TYPE_DIRECTORY) && (strcmp(entryGetName(entryTarget), entryGetName(entrySrc)) == 0))
                     {
                         entryFree(entrySrc);
                         doesExist = true;
                         break;
                     }
-                    entryFree(entrySrc);
-                }
-            }
-
-            else
-            {
-                char *name = stringCreate(entryGetName(entryTarget));
-
-                for (int i = 0; i < listLength(fileNames); i++)
-                {
-                    char *temp = listGet(fileNames, i);
-                    if (strcmp(name, temp) == 0)
+                    else if ((entryGetType(entryTarget) == TYPE_FILE))
                     {
-                        free(temp);
-                        doesExist = true;
-                        break;
+                        if (strcmp(entryGetName(entryTarget), entryGetName(entrySrc)) == 0)
+                        {
+                            free(entrySrc);
+                            doesExist = true;
+                            break;
+                        }
                     }
-                    free(temp);
                 }
-                free(name);
+                entryFree(entrySrc);
             }
 
             if (!doesExist)
@@ -259,7 +316,6 @@ void generateTests(char *destPath, char *srcPath)
 
         directoryFree(tempDirSrc);
         directoryFree(tempDirDest);
-        listFree(fileNames);
     }
     free(cExt);
 

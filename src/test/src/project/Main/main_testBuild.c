@@ -23,10 +23,7 @@
  * @return true if c is in arr, false if c is not in arr
  */
 
- bool utilIsInArray(char *arr, int length, int c);
-
-
- int x = 10;
+bool utilIsInArray(char *arr, int length, int c);
 
 
 
@@ -95,7 +92,7 @@ void testBuild(char *path)
         strcat(srcPath, "/src/test/src/main/c");
         strcat(destPath, "/src/test/src/main/genTests");
 
-        //generateTests(destPath, srcPath);
+        generateTests(destPath, srcPath);
     }
     else
     {

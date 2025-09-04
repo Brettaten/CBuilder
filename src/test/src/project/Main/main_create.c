@@ -23,10 +23,7 @@
  * @return true if c is in arr, false if c is not in arr
  */
 
- bool utilIsInArray(char *arr, int length, int c);
-
-
- int x = 10;
+bool utilIsInArray(char *arr, int length, int c);
 
 
 

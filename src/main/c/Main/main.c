@@ -24,8 +24,6 @@
  */
 bool utilIsInArray(char *arr, int length, int c);
 
-int x = 10;
-
 int main(int argc, char *argv[])
 {
 
@@ -674,7 +672,7 @@ void testBuild(char *path)
         strcat(srcPath, "/src/test/src/main/c");
         strcat(destPath, "/src/test/src/main/genTests");
 
-        //generateTests(destPath, srcPath);
+        generateTests(destPath, srcPath);
     }
     else
     {
