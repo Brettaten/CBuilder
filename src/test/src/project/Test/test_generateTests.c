@@ -208,7 +208,7 @@ void generateTests(char *destPath, char *srcPath)
 
                         FILE *testFile = fopen(dest, "a");
 
-                        char *main = "\n#include <stdio.h>\n#include <time.h>\nint main(){\n";
+                        char *main = "\n#include <stdio.h>\n#include \"../util/executionTime/executionTime.h\"\n#include \"../util/assert/assert.h\"\nint main(){\n\tint64_t before, after, time;\n";
 
                         int c;
                         for (int i = 0; i < strlen(main); i++)
@@ -217,7 +217,7 @@ void generateTests(char *destPath, char *srcPath)
                             putc(c, testFile);
                         }
 
-                        char *template = stringCreate("\tprintf(\"TEST $NUM | $NAME\n\");\n\ttime_t before = time(NULL);\n\t$NAME();\n\ttime_t after = time(NULL);\n\ttime_t time = after - before;\n\tprintf(\"%ld\n\", time);\n");
+                        char *template = stringCreate("\tprintf(\"TEST $NUM | $NAME\\n\");\n\tbefore = getTime();\n\t$NAME();\n\tafter = getTime();\n\ttime = after - before;\n\tprintf(\"Execution time: %ld ms\", time);\n\texecutionTime += time;\n\ttestExe++;\n\tif(passed){\n\t\tprintf(\" | PASSED\\n\");\n\t\ttestPassed++;\n\t} else{\n\t\tprintf(\" | FAILED\\n\");\n\t\ttestFailed++;\n\t}\n");
 
                         for (int i = 0; i < listLength(testFunc); i++)
                         {
@@ -241,6 +241,13 @@ void generateTests(char *destPath, char *srcPath)
 
                             free(func);
                             free(currTemplate);
+                        }
+
+                        char *cleanUp = stringCreate("\tprintf(\"--------------------------------------------------\\n\");\n\ttestPassedRel = (testPassed / testExe) * 100;\n\ttestFailedRel = (testFailed / testExe) * 100;\n\tprintf(\"Tests executed: %d | Total execution time: %d\\n\",testExe, executionTime);\n\tprintf(\"Tests passed: %d | %.2f %\\n\",testPassed, testPassedRel);\n\tprintf(\"Tests failed: %d | %.2f %\\n\",testFailed, testFailedRel);\n");
+
+                        for(int i = 0; i < strlen(cleanUp); i++){
+                            c = cleanUp[i];
+                            putc(c, testFile);
                         }
 
                         putc('}', testFile);
