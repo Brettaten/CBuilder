@@ -66,47 +66,84 @@ time_t utilFileTimeToUnix(FILETIME ft);
 
 
 
+int utilGetEntryAmount(char *path)
+{
+    if (path == NULL)
+    {
+        printf("[ERROR] : Directory is null : utilGetEntryAmount");
+        return -1;
+    }
 
+    WIN32_FIND_DATAA findFileData;
+    HANDLE handle;
 
+    handle = FindFirstFileA(path, &findFileData);
 
+    if (handle == INVALID_HANDLE_VALUE)
+    {
+        printf("[ERROR] : Directory specified in the passed path could not be found | utilGetEntryAmount \n");
+        return -1;
+    }
 
+    int counter = 0;
+
+    while (&findFileData != NULL)
+    {
+        if (strcmp(findFileData.cFileName, ".") != 0 && strcmp(findFileData.cFileName, "..") != 0)
+        {
+            counter++;
+        }
+
+        WINBOOL st1 = FindNextFileA(handle, &findFileData);
+
+        if (st1 == false)
+        {
+            break;
+        }
+    }
+    FindClose(handle);
+    return counter;
+}
 #elif defined(LINUX)
-
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
+int utilGetEntryAmount(char *path)
+{
+    if (path == NULL)
+    {
+        printf("[ERROR] : Directory is null : utilGetEntryAmount");
+        return -1;
+    }
 
+    DIR *dir = opendir(path);
 
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Directory specified in the passed path could not be found | utilGetEntryAmount \n");
+        return -1;
+    }
 
+    struct dirent *dirent;
+    int counter = 0;
 
-
-
-
-
-
-
-
-
-
+    while ((dirent = readdir(dir)) != NULL)
+    {
+        if (strcmp(dirent->d_name, ".") != 0 && strcmp(dirent->d_name, "..") != 0)
+        {
+            counter++;
+        }
+    }
+    closedir(dir);
+    return counter;
+}
 #elif defined(APPLE)
-
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <mach-o/dyld.h>
-
-
-
-
-
-
-
-
-
-
-
 int utilGetEntryAmount(char *path)
 {
     if (path == NULL)

@@ -122,31 +122,10 @@ void build(char *path, bool debug)
         entryFree(bin);
         entryFree(builderFile);
 
-        char linkCommand[] = "link";
-        char *linkSystemCommand = stringCreate(NULL);
-        char *objFiles = "$OBJFILES";
-        char *binPath = "$BINPATH";
-        char *permission = stringCreate("chmod a+x ");
+        link(binDirPath, oFileList, builderFilePath);
 
-        permission = stringCat(permission, binDirPath);
-
-        linkSystemCommand = getCommand(linkCommand, builderFilePath, linkSystemCommand);
-
-        linkSystemCommand = stringReplace(linkSystemCommand, objFiles, oFileList);
-        linkSystemCommand = stringReplace(linkSystemCommand, binPath, binDirPath);
-
-        system(linkSystemCommand);
-
-#ifdef LINUX
-        system(permission);
-#elif defined(APPLE)
-        system(permission);
-#endif
-
-        free(linkSystemCommand);
-        free(oFileList);
         free(binDirPath);
-        free(permission);
+        free(oFileList);
 
         char fileCounterC[16];
         char alteredFileCounterC[16];

@@ -60,47 +60,39 @@ time_t utilFileTimeToUnix(FILETIME ft);
 
 
 
+int directoryDelete(char *directoryPath)
+{
+    int status = _rmdir(directoryPath);
 
-
-
-
-
-
-
-
-
-
+    if (status != 0)
+    {
+        printf("[ERROR] : Function _rmdir failed | directoryDelete \n");
+        return -1;
+    }
+    return 0;
+}
 #elif defined(LINUX)
-
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
+int directoryDelete(char *directoryPath)
+{
+    int status = rmdir(directoryPath);
 
-
-
-
-
-
-
-
-
-
-
-
-
+    if (status != 0)
+    {
+        printf("[ERROR] : Function rmdir failed | directoryDelete \n");
+        return -1;
+    }
+    return 0;
+}
 #elif defined(APPLE)
-
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <mach-o/dyld.h>
-
-
-
-
-
 int directoryDelete(char *directoryPath)
 {
     int status = rmdir(directoryPath);

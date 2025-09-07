@@ -122,6 +122,25 @@ int findProject(char *path, char *dest);
 char *compile(char *destPath, char *srcPath, char *projectPath, bool debug, int *fileCounter, int *alteredFiles);
 
 /**
+ * Function used to link a c program
+ * 
+ * @param destPath the path where the binary should be placed
+ * @param files the paths of all files that should be linked
+ * @param builderFilePath the path to the builderfile
+ */
+void link(char *destPath, char *files, char *builderFilePath);
+
+/**
+ * Function used to link a c program
+ * 
+ * @param destPath the path where the binary should be placed
+ * @param files the paths of all files that should be linked
+ * @param builderFilePath the path to the builderfile
+ * @param name the name of the test
+ */
+void linkTest(char *destPath, char *files, char *builderFilePath, char *name);
+
+/**
  * Function used to get the ressource directory of this cbuilder project
  * 
  * @return Success: The directory | Failure: NULL
@@ -146,6 +165,24 @@ bool isNull(void **p, int length);
  * @return Success: the file name without extension | Failure: NULL
  */
 char *utilGetName(char *name);
+
+/**
+ * Function used to get the name of a file with the absolute path
+ *
+ * @param path the pointer to the path
+ *
+ * @return the name of the file
+ */
+char *getFileNameWithPath(char *path);
+
+/**
+ * Function used to get the name of a file with the absolute path of an splitted file
+ *
+ * @param path the pointer to the path
+ *
+ * @return the name of the file
+ */
+char *getFileNameWithPathSplit(char *path);
 
 /**
  * Function that strips the file name and returns the file extension as a string

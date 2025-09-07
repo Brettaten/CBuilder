@@ -507,31 +507,10 @@ void build(char *path, bool debug)
         entryFree(bin);
         entryFree(builderFile);
 
-        char linkCommand[] = "link";
-        char *linkSystemCommand = stringCreate(NULL);
-        char *objFiles = "$OBJFILES";
-        char *binPath = "$BINPATH";
-        char *permission = stringCreate("chmod a+x ");
+        link(binDirPath, oFileList, builderFilePath);
 
-        permission = stringCat(permission, binDirPath);
-
-        linkSystemCommand = getCommand(linkCommand, builderFilePath, linkSystemCommand);
-
-        linkSystemCommand = stringReplace(linkSystemCommand, objFiles, oFileList);
-        linkSystemCommand = stringReplace(linkSystemCommand, binPath, binDirPath);
-
-        system(linkSystemCommand);
-
-#ifdef LINUX
-        system(permission);
-#elif defined(APPLE)
-        system(permission);
-#endif
-
-        free(linkSystemCommand);
-        free(oFileList);
         free(binDirPath);
-        free(permission);
+        free(oFileList);
 
         char fileCounterC[16];
         char alteredFileCounterC[16];
@@ -649,6 +628,14 @@ void testBuild(char *path)
 
     if (project)
     {
+        char builderFilePath[MAX_LENGTH_PATH];
+        strcpy(builderFilePath, projectPath);
+        strcat(builderFilePath, "/cbuilderfile");
+
+        char binDirPath[MAX_LENGTH_PATH];
+        strcpy(binDirPath, projectPath);
+        strcat(binDirPath, "/src/test/bin");
+
         char srcPath[MAX_LENGTH_PATH];
         char destPath[MAX_LENGTH_PATH];
         strcpy(srcPath, projectPath);
@@ -658,21 +645,142 @@ void testBuild(char *path)
 
         copyProject(destPath, srcPath);
 
-        strcpy(srcPath, destPath);
-        strcpy(destPath, projectPath);
-        strcat(destPath, "/src/test/target/project");
-
-        int fileCounter = 0;
-        int alteredFiles = 0;
-
-        char *oFileList = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
-
         strcpy(srcPath, projectPath);
         strcpy(destPath, projectPath);
         strcat(srcPath, "/src/test/src/main/c");
         strcat(destPath, "/src/test/src/main/genTests");
 
-        generateTests(destPath, srcPath);
+        List *mockList = generateTests(destPath, srcPath);
+
+        strcpy(srcPath, projectPath);
+        strcpy(destPath, projectPath);
+        strcat(srcPath, "/src/test/src/project");
+        strcat(destPath, "/src/test/target/project");
+
+        int fileCounter = 0;
+        int alteredFiles = 0;
+
+        char *oFileListProject = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+
+        strcpy(srcPath, projectPath);
+        strcpy(destPath, projectPath);
+        strcat(srcPath, "/src/test/src/main/genTests");
+        strcat(destPath, "/src/test/target/test");
+
+        char *oFileListTest = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+
+        List *tests = listCreate(sizeof(char *), &stringCopy, NULL);
+        char *testOFiles = stringCreate(NULL);
+        char *token = stringCreate(NULL);
+        int c;
+
+        for (int i = 0; i < strlen(oFileListTest); i++)
+        {
+            c = oFileListTest[i];
+
+            if (isspace(c))
+            {
+                char *name = getFileNameWithPath(token);
+
+                if (strlen(name) >= 6)
+                {
+                    char *sub = stringSub(name, 0, 3);
+
+                    if (strcmp(sub, "test") == 0)
+                    {
+                        listAdd(tests, token);
+                    }
+                    else
+                    {
+                        testOFiles = stringCat(testOFiles, token);
+                        testOFiles = stringCat(testOFiles, " ");
+                    }
+
+                    free(sub);
+                }
+                else
+                {
+                    testOFiles = stringCat(testOFiles, token);
+                    testOFiles = stringCat(testOFiles, " ");
+                }
+
+                token = stringClear(token);
+
+                free(name);
+            }
+            else
+            {
+                token = stringAdd(token, c);
+            }
+        }
+
+        free(token);
+
+        for (int i = 0; i < listLength(tests); i++)
+        {
+            char *testFile = listGet(tests, i);
+            char *listFiles = stringCreate(testFile);
+
+            listFiles = stringCat(listFiles, " ");
+            listFiles = stringCat(listFiles, testOFiles);
+
+            List *mockFiles = listGet(mockList, i);
+            char *projectFiles = stringCreate(oFileListProject);
+
+            for (int j = 0; j < listLength(mockFiles); j++)
+            {
+                char *mockName = listGet(mockFiles, j);
+                char *token = stringCreate(NULL);
+                int c;
+
+                for (int k = 0; k < strlen(projectFiles); k++)
+                {
+                    c = projectFiles[k];
+
+                    if (isspace(c))
+                    {
+                        char *name = getFileNameWithPathSplit(token);
+
+                        if (name != NULL && strcmp(name, mockName) == 0)
+                        {
+                            projectFiles = stringReplace(projectFiles, token, "");
+                        }
+
+                        token = stringClear(token);
+
+                        free(name);
+                    }
+                    else
+                    {
+                        token = stringAdd(token, c);
+                    }
+                }
+                free(mockName);
+                free(token);
+            }
+
+            listFiles = stringCat(listFiles, projectFiles);
+
+            char *testName = getFileNameWithPath(testFile);
+            testName = utilGetName(testName);
+
+            char *binDirPathTemp = stringCreate(binDirPath);
+            directoryCreate(binDirPathTemp, "separate");
+            binDirPathTemp = stringCat(binDirPathTemp, "/separate");
+
+            linkTest(binDirPathTemp, listFiles, builderFilePath, testName);
+
+            free(testFile);
+            free(listFiles);
+            listFree(mockFiles);
+            free(projectFiles);
+            free(testName);
+            free(binDirPathTemp);
+        }
+
+        free(testOFiles);
+        listFree(tests);
+        listFree(mockList);
     }
     else
     {
@@ -1385,4 +1493,158 @@ char *compile(char *destPath, char *srcPath, char *projectPath, bool debug, int 
     memcpy(alteredFiles, &alteredFilesTemp, sizeof(int));
 
     return oFileList;
+}
+
+char *getFileNameWithPath(char *path)
+{
+    char *name = stringCreate(NULL);
+    int nameLength = 0;
+
+    for (int i = strlen(path) - 1; i >= 0; i--)
+    {
+        if (path[i] != '/')
+        {
+            nameLength++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    for (int i = strlen(path) - nameLength, j = 0; i < strlen(path); i++, j++)
+    {
+        name = stringAdd(name, path[i]);
+    }
+
+    return name;
+}
+
+char *getFileNameWithPathSplit(char *path)
+{
+    char *name = stringCreate(NULL);
+    int nameLength = 0;
+
+    for (int i = strlen(path) - 1; i >= 0; i--)
+    {
+        if (path[i] != '_')
+        {
+            nameLength++;
+        }
+        else if (path[i] == '/')
+        {
+            free(name);
+            return NULL;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    for (int i = strlen(path) - nameLength, j = 0; i < strlen(path); i++, j++)
+    {
+        name = stringAdd(name, path[i]);
+    }
+
+    return name;
+}
+
+void link(char *destPath, char *files, char *builderFilePath)
+{
+    char *path = stringCreate(destPath);
+    path = stringCat(path, "/temp.txt");
+    FILE *file = fopen(path, "w");
+    int c;
+
+    for (int i = 0; i < strlen(files); i++)
+    {
+        c = files[i];
+
+        putc(c, file);
+    }
+
+    char responseFile[4096];
+    strcpy(responseFile, "@");
+    strcat(responseFile, path);
+
+    fclose(file);
+
+    char linkCommand[] = "link";
+    char *linkSystemCommand = stringCreate(NULL);
+    char *objFiles = "$OBJFILES";
+    char *binPath = "$BINPATH";
+    char *permission = stringCreate("chmod a+x ");
+
+    permission = stringCat(permission, destPath);
+
+    linkSystemCommand = getCommand(linkCommand, builderFilePath, linkSystemCommand);
+
+    linkSystemCommand = stringReplace(linkSystemCommand, objFiles, responseFile);
+    linkSystemCommand = stringReplace(linkSystemCommand, binPath, destPath);
+
+    system(linkSystemCommand);
+
+#ifdef LINUX
+    system(permission);
+#elif defined(APPLE)
+    system(permission);
+#endif
+
+    remove(path);
+
+    free(linkSystemCommand);
+    free(permission);
+    free(path);
+}
+
+void linkTest(char *destPath, char *files, char *builderFilePath, char *name)
+{
+    char *path = stringCreate(destPath);
+    path = stringCat(path, "/temp.txt");
+    FILE *file = fopen(path, "w");
+    int c;
+
+    for (int i = 0; i < strlen(files); i++)
+    {
+        c = files[i];
+
+        putc(c, file);
+    }
+
+    char responseFile[4096];
+    strcpy(responseFile, "@");
+    strcat(responseFile, path);
+
+    fclose(file);
+
+    char linkCommand[] = "linkTest";
+    char *linkSystemCommand = stringCreate(NULL);
+    char *objFiles = "$OBJFILES";
+    char *binPath = "$BINPATH";
+    char *permission = stringCreate("chmod a+x ");
+
+    permission = stringCat(permission, destPath);
+
+    linkSystemCommand = getCommand(linkCommand, builderFilePath, linkSystemCommand);
+
+    destPath = stringCat(destPath, "/");
+    destPath = stringCat(destPath, name);
+
+    linkSystemCommand = stringReplace(linkSystemCommand, objFiles, responseFile);
+    linkSystemCommand = stringReplace(linkSystemCommand, binPath, destPath);
+
+    system(linkSystemCommand);
+
+#ifdef LINUX
+    system(permission);
+#elif defined(APPLE)
+    system(permission);
+#endif
+
+    remove(path);
+
+    free(linkSystemCommand);
+    free(permission);
+    free(path);
 }

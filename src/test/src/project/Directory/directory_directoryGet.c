@@ -56,47 +56,249 @@ int utilGetEntryAmount(char *path);
 time_t utilFileTimeToUnix(FILETIME ft);
 
 
+Directory *directoryGet(char *path)
+{
+    char absPath[MAX_LENGTH_PATH];
+    directoryNormalizePath(absPath, path);
 
+    int length = strlen(absPath);
+    char pathEx[length + 2];
+    strcpy(pathEx, absPath);
 
+    char *suffix = "/*";
+    char dirPath[MAX_LENGTH_PATH];
+    char dirName[MAX_LENGTH_NAME];
 
+    strcat(pathEx, suffix);
+    strcpy(dirPath, absPath);
 
+    int nameLength = 0;
 
+    for (int i = strlen(absPath) - 1; i >= 0; i--)
+    {
+        if (absPath[i] != '/')
+        {
+            nameLength++;
+        }
+        else
+        {
+            break;
+        }
+    }
 
+    for (int i = strlen(absPath) - nameLength, j = 0; i < strlen(absPath); i++, j++)
+    {
+        dirName[j] = absPath[i];
+    }
 
+    dirName[nameLength] = '\0';
 
+    WIN32_FIND_DATAA findFileData;
+    HANDLE handle;
 
+    handle = FindFirstFileA(pathEx, &findFileData);
 
+    if (handle == INVALID_HANDLE_VALUE)
+    {
+        printf("[ERROR] : Directory specified in the passed path could not be found | directoryGet \n");
+        return NULL;
+    }
 
+    Directory *dir = (Directory *)malloc(sizeof(Directory));
 
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Memory allocation failed | create \n");
+        return NULL;
+    }
 
+    int entryAmount = utilGetEntryAmount(pathEx);
+    Entry **entries = (Entry **)malloc(sizeof(Entry *) * entryAmount);
 
+    dir->entryAmount = entryAmount;
+    dir->entries = entries;
+    strcpy(dir->path, dirPath);
+    strcpy(dir->name, dirName);
+
+    int counter = 0;
+
+    while (&findFileData != NULL)
+    {
+        if (strcmp(findFileData.cFileName, ".") == 0 || strcmp(findFileData.cFileName, "..") == 0)
+        {
+        }
+        else
+        {
+            Entry *entry = (Entry *)malloc(sizeof(Entry));
+
+            if (entry == NULL)
+            {
+                dir->entryAmount = counter;
+                directoryFree(dir);
+                printf("[ERROR] : Memory allocation failed : create \n");
+                return NULL;
+            }
+
+            strcpy(entry->name, findFileData.cFileName);
+
+            char entryPath[MAX_LENGTH_PATH];
+            strcpy(entryPath, dir->path);
+            strcat(entryPath, "/");
+            strcat(entryPath, entry->name);
+            strcpy(entry->path, entryPath);
+
+            if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                entry->type = TYPE_DIRECTORY;
+            }
+            else
+            {
+                entry->type = TYPE_FILE;
+            }
+
+            entry->lastModified = utilFileTimeToUnix(findFileData.ftLastWriteTime);
+
+            dir->entries[counter] = entry;
+
+            counter++;
+        }
+
+        WINBOOL st1 = FindNextFileA(handle, &findFileData);
+
+        if (st1 == false)
+        {
+            break;
+        }
+    }
+
+    FindClose(handle);
+
+    return dir;
+}
 #elif defined(LINUX)
-
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
+Directory *directoryGet(char *path)
+{
+    char absPath[MAX_LENGTH_PATH];
+    directoryNormalizePath(absPath, path);
 
+    char dirPath[MAX_LENGTH_PATH];
+    char dirName[MAX_LENGTH_NAME];
 
+    strcpy(dirPath, absPath);
 
+    int nameLength = 0;
 
+    for (int i = strlen(absPath) - 1; i >= 0; i--)
+    {
+        if (absPath[i] != '/')
+        {
+            nameLength++;
+        }
+        else
+        {
+            break;
+        }
+    }
 
+    for (int i = strlen(absPath) - nameLength, j = 0; i < strlen(absPath); i++, j++)
+    {
+        dirName[j] = absPath[i];
+    }
 
+    dirName[nameLength] = '\0';
 
+    DIR *dirUnix = opendir(absPath);
 
+    if (dirUnix == NULL)
+    {
+        printf("[ERROR] : Directory specified in the passed path could not be found | directoryGet \n");
+        return NULL;
+    }
 
+    Directory *dir = (Directory *)malloc(sizeof(Directory));
 
+    if (dir == NULL)
+    {
+        printf("[ERROR] : Memory allocation failed | create \n");
+        return NULL;
+    }
 
+    int entryAmount = utilGetEntryAmount(absPath);
+    Entry **entries = (Entry **)malloc(sizeof(Entry *) * entryAmount);
 
+    dir->entryAmount = entryAmount;
+    dir->entries = entries;
+    strcpy(dir->path, dirPath);
+    strcpy(dir->name, dirName);
 
+    struct dirent *dirent;
+    int counter = 0;
+
+    while ((dirent = readdir(dirUnix)) != NULL)
+    {
+        if (strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0)
+        {
+        }
+        else
+        {
+            Entry *entry = (Entry *)malloc(sizeof(Entry));
+
+            if (entry == NULL)
+            {
+                dir->entryAmount = counter;
+                directoryFree(dir);
+                printf("[ERROR] : Memory allocation failed : create \n");
+                return NULL;
+            }
+
+            strcpy(entry->name, dirent->d_name);
+
+            char entryPath[MAX_LENGTH_PATH];
+            strcpy(entryPath, dir->path);
+            strcat(entryPath, "/");
+            strcat(entryPath, entry->name);
+            strcpy(entry->path, entryPath);
+
+            struct stat statbuf;
+            if (stat(entry->path, &statbuf) != 0)
+            {
+                dir->entryAmount = counter;
+                directoryFree(dir);
+                printf("[ERROR] : Can not access stats for entry at path %s | directoryGet", entry->path);
+                return NULL;
+            }
+
+            if (S_ISDIR(statbuf.st_mode))
+            {
+                entry->type = TYPE_DIRECTORY;
+            }
+            else
+            {
+                entry->type = TYPE_FILE;
+            }
+
+            entry->lastModified = statbuf.st_mtime;
+
+            dir->entries[counter] = entry;
+
+            counter++;
+        }
+    }
+
+    closedir(dirUnix);
+
+    return dir;
+}
 #elif defined(APPLE)
-
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <mach-o/dyld.h>
-
 Directory *directoryGet(char *path)
 {
     char absPath[MAX_LENGTH_PATH];

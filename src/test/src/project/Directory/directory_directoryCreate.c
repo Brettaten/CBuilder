@@ -58,47 +58,50 @@ time_t utilFileTimeToUnix(FILETIME ft);
 
 
 
+bool directoryCreate(char *directoryPath, char *directoryName)
+{
+    char absPath[MAX_LENGTH_PATH];
+    directoryNormalizePath(absPath, directoryPath);
+    strcat(absPath, "/");
+    strcat(absPath, directoryName);
 
-
-
-
-
-
-
-
-
-
-
-
+    if (!CreateDirectoryA(absPath, NULL))
+    {
+        DWORD err = GetLastError();
+        if (err != ERROR_ALREADY_EXISTS)
+        {
+            printf("[ERROR] : Directory %s could not be created | directoryCreate \n", absPath);
+            return false;
+        }
+    }
+    return true;
+}
 #elif defined(LINUX)
-
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
+bool directoryCreate(char *directoryPath, char *directoryName)
+{
+    char absPath[MAX_LENGTH_PATH];
+    directoryNormalizePath(absPath, directoryPath);
+    strcat(absPath, "/");
+    strcat(absPath, directoryName);
 
+    if (mkdir(absPath, 0777) != 0 && errno != EEXIST)
+    {
+        printf("[ERROR] : Directory %s could not be created | directoryCreate \n", absPath);
+        return false;
+    }
 
-
-
-
-
-
-
-
-
-
-
-
+    return true;
+}
 #elif defined(APPLE)
-
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <mach-o/dyld.h>
-
-
-
 bool directoryCreate(char *directoryPath, char *directoryName)
 {
     char absPath[MAX_LENGTH_PATH];

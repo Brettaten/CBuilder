@@ -31,5 +31,7 @@ void copyProject(char *destPath, char *srcPath);
  * 
  * @param destPath the destPath
  * @param srcPath the srcPath
+ * 
+ * @return A list that contains the mock functions for each test file
  */
-void generateTests(char *destPath, char *srcPath);
+List *generateTests(char *destPath, char *srcPath);

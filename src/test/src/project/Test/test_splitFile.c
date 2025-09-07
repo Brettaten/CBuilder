@@ -274,13 +274,39 @@ void splitFile(Entry *src, Directory *dest)
 
                     char *tempName = getFunctionName(token);
 
-                    listAdd(funcNames, tempName);
-                    free(tempName);
+                    int counter = -1;
+
+                    for (int i = 0; i < listLength(funcNames); i++)
+                    {
+                        char *tempFuncName = listGet(funcNames, i);
+
+                        if (strcmp(tempFuncName, tempName) == 0)
+                        {
+                            counter = i;
+                        }
+
+                        free(tempFuncName);
+                    }
+
+                    if (counter != -1)
+                    {
+                        char *duplicateFile = listGet(splitFiles, counter);
+                        duplicateFile = stringCat(duplicateFile, token);
+
+                        listSet(splitFiles, duplicateFile, counter);
+
+                        free(duplicateFile);
+                    }
+                    else
+                    {
+                        listAdd(funcNames, tempName);
+                        free(tempName);
+
+                        listAdd(splitFiles, tempFile);
+                    }
 
                     token = stringClear(token);
                     currToken = stringClear(currToken);
-
-                    listAdd(splitFiles, tempFile);
 
                     free(tempFile);
 

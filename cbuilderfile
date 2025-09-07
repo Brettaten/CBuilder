@@ -9,3 +9,7 @@ debug {
 link {
     cmd: "gcc $OBJFILES -o $BINPATH/cbuilder"
 }
+
+linkTest {
+    cmd: "gcc $OBJFILES -o $BINPATH"
+}

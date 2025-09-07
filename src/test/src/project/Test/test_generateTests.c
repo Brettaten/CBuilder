@@ -63,7 +63,7 @@ void utilConcatenateLists(List *dest, List *src);
 
 
 
-void generateTests(char *destPath, char *srcPath)
+List *generateTests(char *destPath, char *srcPath)
 {
     Directory *srcDir = directoryGet(srcPath);
     Directory *destDir = directoryGet(destPath);
@@ -71,7 +71,7 @@ void generateTests(char *destPath, char *srcPath)
     if (srcDir == NULL || destDir == NULL)
     {
         printf("[ERROR] : Directory could not be found | generateTests \n");
-        return;
+        return NULL;
     }
 
     Stack *stackSrc = stackCreate(directoryGetSize(), &directoryCopy, &directoryFree);
@@ -80,7 +80,8 @@ void generateTests(char *destPath, char *srcPath)
     if (stackSrc == NULL || stackDest == NULL)
     {
         printf("[ERROR] : function stackCreate failed | generateTests \n");
-        return;
+        return NULL;
+        ;
     }
 
     stackPush(stackSrc, srcDir);
@@ -90,6 +91,8 @@ void generateTests(char *destPath, char *srcPath)
     directoryFree(destDir);
 
     int testNum = 1;
+
+    List *mockList = listCreate(listSize(), &listCopy, &listFree);
 
     char *cExt = stringCreate(".c");
 
@@ -102,7 +105,8 @@ void generateTests(char *destPath, char *srcPath)
         if (tempDirSrc == NULL || tempDirDest == NULL)
         {
             printf("[ERROR] : Function stackPop failed | generateTests \n");
-            return;
+            return NULL;
+            ;
         }
 
         for (int i = 0; i < directoryGetEntryAmount(tempDirSrc); i++)
@@ -113,7 +117,8 @@ void generateTests(char *destPath, char *srcPath)
             if (entrySrc == NULL)
             {
                 printf("[ERROR] : function directoryGetEntryAt failed | generateTests \n");
-                return;
+                return NULL;
+                ;
             }
 
             if (entryGetType(entrySrc) == TYPE_DIRECTORY)
@@ -124,7 +129,8 @@ void generateTests(char *destPath, char *srcPath)
                 if (newSrc == NULL)
                 {
                     printf("[ERROR] : function directoryGet failed | generateTests \n");
-                    return;
+                    return NULL;
+                    ;
                 }
 
                 bool st1 = directoryCreate(directoryGetPath(tempDirDest), entryGetName(entrySrc));
@@ -132,7 +138,8 @@ void generateTests(char *destPath, char *srcPath)
                 if (st1 == false)
                 {
                     printf("[ERROR] : Function directoryCreate failed | generateTests \n");
-                    return;
+                    return NULL;
+                    ;
                 }
 
                 char temp[MAX_LENGTH_PATH];
@@ -145,7 +152,8 @@ void generateTests(char *destPath, char *srcPath)
                 if (newDest == NULL)
                 {
                     printf("[ERROR] : Function directoryGet failed | generateTests \n");
-                    return;
+                    return NULL;
+                    ;
                 }
 
                 stackPush(stackSrc, newSrc);
@@ -164,6 +172,40 @@ void generateTests(char *destPath, char *srcPath)
 
                 Entry *entryDest = directoryGetEntry(tempDirDest, entryGetName(entrySrc), TYPE_FILE);
 
+                if (strcmp(prefix, "test") == 0 && strcmp(extension, ".c") == 0)
+                {
+                    List *fileNamesList = getFileNames(entrySrc);
+                    List *mockListTemp = listCreate(sizeof(char *), &stringCopy, NULL);
+
+                    for (int i = 0; i < listLength(fileNamesList); i++)
+                    {
+                        char *funcName = listGet(fileNamesList, i);
+
+                        if (5 > strlen(funcName) - 3)
+                        {
+                            free(funcName);
+                            continue;
+                        }
+
+                        funcName = stringSub(funcName, 5, strlen(funcName) - 3);
+                        char *funcPrefix = stringSub(funcName, 0, 3);
+
+                        if (strcmp(funcPrefix, "test") != 0 && strcmp(funcPrefix, "util") != 0 && strcmp(funcName, name) != 0)
+                        {
+                            funcName = stringCat(funcName, ".o");
+                            listAdd(mockListTemp, funcName);
+                        }
+
+                        free(funcName);
+                        free(funcPrefix);
+                    }
+                    listFree(fileNamesList);
+
+                    listAdd(mockList, mockListTemp);
+
+                    listFree(mockListTemp);
+                }
+
                 if (entryDest == NULL || entryGetLastModified(entryDest) < entryGetLastModified(entrySrc))
                 {
                     char dest[MAX_LENGTH_PATH];
@@ -176,7 +218,8 @@ void generateTests(char *destPath, char *srcPath)
                     if (st2 == false)
                     {
                         printf("[ERROR] : function fileCopy failed | generateTests \n");
-                        return;
+                        return NULL;
+                        ;
                     }
 
                     if (strcmp(prefix, "test") == 0 && strcmp(extension, ".c") == 0)
@@ -187,28 +230,39 @@ void generateTests(char *destPath, char *srcPath)
                         for (int i = 0; i < listLength(tempFuncNames); i++)
                         {
                             char *temp = listGet(tempFuncNames, i);
-                            temp = stringSub(temp, 5, strlen(temp) - 3);
+                            char *tempTestName = getFileNameWithPathSplit(temp);
 
-                            if (temp == NULL)
+                            free(temp);
+
+                            tempTestName = stringSub(tempTestName, 0, strlen(tempTestName) - 3);
+
+                            if (tempTestName == NULL)
                             {
                                 printf("[ERROR] : function listGet failed | generateTests \n");
-                                return;
+                                return NULL;
+                                ;
                             }
 
-                            char *funcPrefix = stringSub(temp, 0, 3);
+                            char *funcPrefix = stringSub(tempTestName, 0, 3);
 
-                            if (strcmp(funcPrefix, "test") == 0 && strcmp(temp, entryGetName(entrySrc)) != 0)
+                            if (strcmp(funcPrefix, "test") == 0 && strcmp(tempTestName, name) != 0)
                             {
-                                listAdd(testFunc, temp);
+                                listAdd(testFunc, tempTestName);
                             }
 
                             free(funcPrefix);
-                            free(temp);
+                            free(tempTestName);
                         }
 
                         FILE *testFile = fopen(dest, "a");
 
-                        char *main = "\n#include <stdio.h>\n#include \"../util/executionTime/executionTime.h\"\n#include \"../util/assert/assert.h\"\nint main(){\n\tint64_t before, after, time;\n";
+                        char *path = stringCreate(destPath);
+                        path = stringCat(path, "/util/temp.txt");
+
+                        char *main = stringCreate("\n#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n#include \"util/cbuilderTest.h\"\nint main(int argc, char *argv[]){\n\tint64_t before, after, time;\n\tstrcpy(path,\"$PATH\");\n\tbool isEnd = false;\n\tif(argc == 2){\n\t\tint end = atoi(argv[1]);\n\t\tif(end == 1){\n\t\t\tisEnd = true;\n\t\t}\n\t}\n\tgetStats();\n");
+                        main = stringReplace(main, "$PATH", path);
+
+                        free(path);
 
                         int c;
                         for (int i = 0; i < strlen(main); i++)
@@ -243,9 +297,10 @@ void generateTests(char *destPath, char *srcPath)
                             free(currTemplate);
                         }
 
-                        char *cleanUp = stringCreate("\tprintf(\"--------------------------------------------------\\n\");\n\ttestPassedRel = (testPassed / testExe) * 100;\n\ttestFailedRel = (testFailed / testExe) * 100;\n\tprintf(\"Tests executed: %d | Total execution time: %d\\n\",testExe, executionTime);\n\tprintf(\"Tests passed: %d | %.2f %\\n\",testPassed, testPassedRel);\n\tprintf(\"Tests failed: %d | %.2f %\\n\",testFailed, testFailedRel);\n");
+                        char *cleanUp = stringCreate("\tif(isEnd && testExe > 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\ttestPassedRel = (testPassed / testExe) * 100;\n\t\ttestFailedRel = (testFailed / testExe) * 100;\n\t\tprintf(\"Tests executed: %d | Total execution time: %d\\n\",testExe, executionTime);\n\t\tprintf(\"Tests passed: %d | %.2f %\\n\",testPassed, testPassedRel);\n\t\tprintf(\"Tests failed: %d | %.2f %\\n\",testFailed, testFailedRel);\n\t\tremove(path);\n\t} else if(isEnd && testExe == 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\tprintf(\"No test was executed\");\n\t}\n\telse{\n\t\tsaveStats();\n\t}\n");
 
-                        for(int i = 0; i < strlen(cleanUp); i++){
+                        for (int i = 0; i < strlen(cleanUp); i++)
+                        {
                             c = cleanUp[i];
                             putc(c, testFile);
                         }
@@ -253,6 +308,8 @@ void generateTests(char *destPath, char *srcPath)
                         putc('}', testFile);
 
                         free(template);
+                        free(main);
+                        free(cleanUp);
                         listFree(tempFuncNames);
                         listFree(testFunc);
                         fclose(testFile);
@@ -328,4 +385,6 @@ void generateTests(char *destPath, char *srcPath)
 
     stackFree(stackSrc);
     stackFree(stackDest);
+
+    return mockList;
 }

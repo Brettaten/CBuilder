@@ -64,47 +64,67 @@ time_t utilFileTimeToUnix(FILETIME ft);
 
 
 
+void directoryNormalizePath(char *dest, char *src)
+{
+    char absPath[MAX_LENGTH_PATH];
+    _fullpath(absPath, src, sizeof(absPath));
 
+    int length = strlen(absPath);
 
+    if (absPath[length - 1] == '\\' || absPath[length - 1] == '/')
+    {
+        absPath[length - 1] = '\0';
+        length--;
+    }
 
+    char terminator = '/';
 
+    for (int i = 0; i < length; i++)
+    {
+        if (absPath[i] == '\\')
+        {
+            absPath[i] = '/';
+        }
+    }
 
-
+    strcpy(dest, absPath);
+}
 #elif defined(LINUX)
-
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
+void directoryNormalizePath(char *dest, char *src)
+{
+    char absPath[MAX_LENGTH_PATH];
+    realpath(src, absPath);
 
+    int length = strlen(absPath);
 
+    if (absPath[length - 1] == '\\' || absPath[length - 1] == '/')
+    {
+        absPath[length - 1] = '\0';
+        length--;
+    }
 
+    char terminator = '/';
 
+    for (int i = 0; i < length; i++)
+    {
+        if (absPath[i] == '\\')
+        {
+            absPath[i] = '/';
+        }
+    }
 
-
-
-
-
-
-
-
-
+    strcpy(dest, absPath);
+}
 #elif defined(APPLE)
-
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <mach-o/dyld.h>
-
-
-
-
-
-
-
-
-
 void directoryNormalizePath(char *dest, char *src)
 {
     char absPath[MAX_LENGTH_PATH];

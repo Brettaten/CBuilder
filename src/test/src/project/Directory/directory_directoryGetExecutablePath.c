@@ -62,47 +62,45 @@ time_t utilFileTimeToUnix(FILETIME ft);
 
 
 
-
-
-
-
-
-
-
-
+int directoryGetExecutablePath(char *dest)
+{
+    char path[MAX_LENGTH_PATH];
+    DWORD len = GetModuleFileNameA(NULL, path, MAX_LENGTH_PATH);
+    if (len == 0)
+    {
+        printf("[ERROR] : Executable path could not be determined | directoryGetProjectPath \n");
+        return -1;
+    }
+    char pathNorm[MAX_LENGTH_PATH];
+    directoryNormalizePath(pathNorm, path);
+    strcpy(dest, pathNorm);
+    return 0;
+}
 #elif defined(LINUX)
-
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
-
-
-
-
-
-
-
-
-
-
-
-
-
+int directoryGetExecutablePath(char *dest)
+{
+    char path[MAX_LENGTH_PATH];
+    ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+    if (len == -1)
+    {
+        printf("[ERROR] : Executable path could not be determined | directoryGetProjectPath \n");
+        return -1;
+    }
+    char pathNorm[MAX_LENGTH_PATH];
+    directoryNormalizePath(pathNorm, path);
+    strcpy(dest, pathNorm);
+    return 0;
+}
 #elif defined(APPLE)
-
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <mach-o/dyld.h>
-
-
-
-
-
-
-
 int directoryGetExecutablePath(char *dest)
 {
     char path[MAX_LENGTH_PATH];
