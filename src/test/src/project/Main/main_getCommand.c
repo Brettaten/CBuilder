@@ -52,6 +52,10 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
+
+
 char *getCommand(char *command, char *path, char *destCmd)
 {
     FILE *file = fopen(path, "r");

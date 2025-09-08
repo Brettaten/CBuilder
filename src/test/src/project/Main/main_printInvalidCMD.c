@@ -38,6 +38,8 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
 void printInvalidCMD()
 {
     printf(SEPERATOR);

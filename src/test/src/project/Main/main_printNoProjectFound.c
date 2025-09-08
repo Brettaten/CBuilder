@@ -42,6 +42,8 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
 void printNoProjectFound()
 {
     printf(SEPERATOR);

@@ -50,6 +50,8 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
 void testBuild(char *path)
 {
     char projectPath[MAX_LENGTH_PATH];
@@ -98,17 +100,20 @@ void testBuild(char *path)
         strcat(srcPath, "/src/test/src/project");
         strcat(destPath, "/src/test/target/project");
 
-        int fileCounter = 0;
-        int alteredFiles = 0;
+        int fileCounterProject = 0;
+        int alteredFilesProject = 0;
 
-        char *oFileListProject = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+        char *oFileListProject = compile(destPath, srcPath, projectPath, true, &fileCounterProject, &alteredFilesProject);
 
         strcpy(srcPath, projectPath);
         strcpy(destPath, projectPath);
         strcat(srcPath, "/src/test/src/main/genTests");
         strcat(destPath, "/src/test/target/test");
 
-        char *oFileListTest = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+        int fileCounterTest = 0;
+        int alteredFilesTest = 0;
+
+        char *oFileListTest = compile(destPath, srcPath, projectPath, true, &fileCounterTest, &alteredFilesTest);
 
         List *tests = listCreate(sizeof(char *), &stringCopy, NULL);
         char *testOFiles = stringCreate(NULL);
@@ -156,6 +161,8 @@ void testBuild(char *path)
         }
 
         free(token);
+
+        List *testExe = listCreate(sizeof(char *), &stringCopy, NULL);
 
         for (int i = 0; i < listLength(tests); i++)
         {
@@ -211,6 +218,10 @@ void testBuild(char *path)
 
             linkTest(binDirPathTemp, listFiles, builderFilePath, testName);
 
+            binDirPathTemp = stringCat(binDirPathTemp, "/");
+            binDirPathTemp = stringCat(binDirPathTemp, testName);
+            listAdd(testExe, binDirPathTemp);
+
             free(testFile);
             free(listFiles);
             listFree(mockFiles);
@@ -222,6 +233,91 @@ void testBuild(char *path)
         free(testOFiles);
         listFree(tests);
         listFree(mockList);
+
+        char pathExe[MAX_LENGTH_PATH];
+        strcpy(pathExe, binDirPath);
+        strcat(pathExe, "/test.c");
+
+        FILE *file = fopen(pathExe, "w");
+
+        char *baseFile = "#include <stdlib.h>\nint main(){\n\t";
+
+        for (int i = 0; i < strlen(baseFile); i++)
+        {
+            c = baseFile[i];
+            putc(c, file);
+        }
+
+        char *template = stringCreate("system(\"$PATH\");\n\t");
+        char *templateLast = stringCreate("system(\"$PATH 1\");\n\t");
+
+        for (int i = 0; i < listLength(testExe); i++)
+        {
+            char *testPath = listGet(testExe, i);
+            char *templateTemp;
+            if (i + 1 == listLength(testExe))
+            {
+                templateTemp = stringCreate(templateLast);
+            }
+            else
+            {
+                templateTemp = stringCreate(template);
+            }
+            templateTemp = stringReplace(templateTemp, "$PATH", testPath);
+
+            for (int j = 0; j < strlen(templateTemp); j++)
+            {
+                c = templateTemp[j];
+                putc(c, file);
+            }
+
+            free(testPath);
+            free(templateTemp);
+        }
+
+        putc('\n', file);
+        putc('}', file);
+
+        fclose(file);
+        listFree(testExe);
+        free(template);
+        free(templateLast);
+
+        char oPath[MAX_LENGTH_PATH];
+        strcpy(oPath, binDirPath);
+        strcat(oPath, "/test.o");
+
+        char *systemCommand = stringCreate(NULL);
+        systemCommand = getCommand("debug", builderFilePath, systemCommand);
+        systemCommand = stringReplace(systemCommand, "$CFILE", pathExe);
+        systemCommand = stringReplace(systemCommand, "$OBJFILE", oPath);
+
+        system(systemCommand);
+
+        linkTest(binDirPath, oPath, builderFilePath, "test");
+
+        remove(oPath);
+        remove(pathExe);
+
+        free(systemCommand);
+
+        char fileCounterProjectC[16];
+        char alteredFileCounterProjectC[16];
+        sprintf(fileCounterProjectC, "%d", fileCounterProject);
+        sprintf(alteredFileCounterProjectC, "%d", alteredFilesProject);
+
+        char fileCounterTestC[16];
+        char alteredFileCounterTestC[16];
+        sprintf(fileCounterTestC, "%d", fileCounterTest);
+        sprintf(alteredFileCounterTestC, "%d", alteredFilesTest);
+
+        printf(SEPERATOR);
+        printf(HEADING, "S U C C E S S");
+        printf(LINE, "Files compiled (project):", alteredFileCounterProjectC);
+        printf(LINE, "Files linked (project):", fileCounterProjectC);
+        printf(LINE, "Files compiled (test):", alteredFileCounterTestC);
+        printf(LINE, "Files linked (test):", fileCounterTestC);
+        printf(SEPERATOR);
     }
     else
     {

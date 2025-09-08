@@ -38,59 +38,16 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-char *utilGetName(char *name)
+void printHelpTestClear()
 {
-    if (name == NULL)
-    {
-        printf("[ERROR] : name is null | utilGetName \n");
-        return NULL;
-    }
-
-    int length = strlen(name);
-    char cpy[length];
-
-    for (int i = 0; i < length; i++)
-    {
-        if (name[i] == '.')
-        {
-            cpy[i] = '\0';
-            break;
-        }
-        cpy[i] = name[i];
-    }
-    cpy[length] = '\0';
-
-    char *str = stringCreate(cpy);
-
-    return str;
+    printf(SEPERATOR);
+    printf(HEADING, "T E S T _ C L E A R");
+    printf(INFO, "By using this command, CBuilder deletes all copied c files from the project, all object files and all generated tests.");
+    printf(EMPTY);
+    printf(LIST, "CBuilder will go up the directory tree to find a CBuilder project. It wil start at -p or the CWD");
+    printf(LIST, "When a project was found, CBuilder deletes all files as mentioned above");
+    printf(SEPERATOR);
+    printf(HEADING, "A R G U M E N T S");
+    printf(LINE, "-p [PATH]", "specifies a direct or indirect path");
+    printf(SEPERATOR);
 }

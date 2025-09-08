@@ -76,6 +76,10 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
+
+
 void linkTest(char *destPath, char *files, char *builderFilePath, char *name)
 {
     char *path = stringCreate(destPath);

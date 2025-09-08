@@ -68,6 +68,10 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
+
+
 char *compile(char *destPath, char *srcPath, char *projectPath, bool debug, int *fileCounter, int *alteredFiles)
 {
     Directory *dir = directoryGet(projectPath);

@@ -34,6 +34,11 @@ void printHelpClear();
 void printHelpTestBuild();
 
 /**
+ * Function used to display information about the command test_build
+ */
+void printHelpTestClear();
+
+/**
  * Function that displays some help after the user entered a wrong command
  */
 void printInvalidCMD();
@@ -76,6 +81,13 @@ void clear(char *path);
  * @param path The path were cbuilder should look for a project
  */
 void testBuild(char *path);
+
+/**
+ * Function that executes the cbuilder clear -p command
+ * 
+ * @param path The path were cbuilder should look for a project
+ */
+void testClear(char *path);
 
 /**
  * Function used to get a command from the cbuilderfile

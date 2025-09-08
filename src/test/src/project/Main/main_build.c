@@ -46,6 +46,8 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
 void build(char *path, bool debug)
 {
     char projectPath[MAX_LENGTH_PATH];

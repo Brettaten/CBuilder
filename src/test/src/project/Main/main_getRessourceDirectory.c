@@ -58,6 +58,10 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
+
+
 Directory *getRessourceDirectory()
 {
     char pathExe[MAX_LENGTH_PATH];

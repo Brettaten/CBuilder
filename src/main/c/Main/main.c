@@ -200,6 +200,46 @@ int main(int argc, char *argv[])
         testBuild(path);
     }
 
+    else if (strcmp(mainCMD, "test_clear") == 0)
+    {
+        char path[MAX_LENGTH_PATH] = ".";
+
+        for (int i = 2; i < argc; i++)
+        {
+            if (strcmp(argv[i], "-h") == 0)
+            {
+                if (argc != 3)
+                {
+                    printInvalidCMD();
+                    return -1;
+                }
+                else
+                {
+                    printHelpTestClear();
+                    return 0;
+                }
+            }
+
+            else if (strcmp(argv[i], "-p") == 0)
+            {
+                if (argc <= i + 1)
+                {
+                    printInvalidCMD();
+                    return -1;
+                }
+                strcpy(path, argv[i + 1]);
+                i++;
+            }
+
+            else
+            {
+                printInvalidCMD();
+                return -1;
+            }
+        }
+        testClear(path);
+    }
+
     else if (strcmp(mainCMD, "-h") == 0)
     {
         if (argv[argc - 1] != mainCMD)
@@ -241,6 +281,8 @@ void printHelpGeneral()
     printf(LINE, "create", "creates the project structure and the cbuilder file");
     printf(LINE, "build", "compiles and links the project to create an executable");
     printf(LINE, "clear", "deletes all files and directories in target/prod and target/debug");
+    printf(LINE, "test_build", "builds all tests");
+    printf(LINE, "test_clear", "deletes all copied c files from the project, all object files in test/ and all generated tests");
     printf(SEPERATOR);
     printf(HEADING, "A R G U M E N T S");
     printf(LINE, "-v", "displays the version of cbuilder on this machine");
@@ -304,6 +346,20 @@ void printHelpClear()
 
 void printHelpTestBuild()
 {
+}
+
+void printHelpTestClear()
+{
+    printf(SEPERATOR);
+    printf(HEADING, "T E S T _ C L E A R");
+    printf(INFO, "By using this command, CBuilder deletes all copied c files from the project, all object files and all generated tests.");
+    printf(EMPTY);
+    printf(LIST, "CBuilder will go up the directory tree to find a CBuilder project. It wil start at -p or the CWD");
+    printf(LIST, "When a project was found, CBuilder deletes all files as mentioned above");
+    printf(SEPERATOR);
+    printf(HEADING, "A R G U M E N T S");
+    printf(LINE, "-p [PATH]", "specifies a direct or indirect path");
+    printf(SEPERATOR);
 }
 
 void printInvalidCMD()
@@ -378,21 +434,23 @@ void create(char *path)
         }
 
         char pathBuilderfileDest[MAX_LENGTH_PATH];
-        strcpy(pathBuilderfileDest, path);
+        strcpy(pathBuilderfileDest, projectPath);
         strcpy(pathBuilderfileDest, "/cbuilderfile");
 
         char pathBuilderfileSrc[MAX_LENGTH_PATH];
         strcpy(pathBuilderfileSrc, directoryGetPath(ressource));
         strcat(pathBuilderfileSrc, entryGetName(template));
 
-        if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile") || !fileCopy(pathBuilderfileDest, pathBuilderfileSrc))
+        printf("path: %s", projectPath);
+
+        if (!directoryCreate(projectPath, "bin") || !directoryCreate(projectPath, "src") || !directoryCreate(projectPath, "target") || !fileCreate(projectPath, "cbuilderfile") || !fileCopy(pathBuilderfileDest, pathBuilderfileSrc))
         {
             printf("[ERROR] : Something went wrong during project creation | create \n");
             return;
         }
 
         char pathTarget[MAX_LENGTH_PATH];
-        strcpy(pathTarget, path);
+        strcpy(pathTarget, projectPath);
         strcat(pathTarget, "/target");
 
         if (!directoryCreate(pathTarget, "prod") || !directoryCreate(pathTarget, "debug"))
@@ -402,7 +460,7 @@ void create(char *path)
         }
 
         char pathSrc[MAX_LENGTH_PATH];
-        strcpy(pathSrc, path);
+        strcpy(pathSrc, projectPath);
         strcat(pathSrc, "/src");
 
         if (!directoryCreate(pathSrc, "main") || !directoryCreate(pathSrc, "test"))
@@ -416,6 +474,46 @@ void create(char *path)
         strcat(pathMain, "/main");
 
         if (!directoryCreate(pathMain, "c") || !directoryCreate(pathMain, "ressources"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTest[MAX_LENGTH_PATH];
+        strcpy(pathTest, pathSrc);
+        strcat(pathTest, "/test");
+
+        if (!directoryCreate(pathTest, "bin") || !directoryCreate(pathTest, "src") || !directoryCreate(pathTest, "target"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTestSrc[MAX_LENGTH_PATH];
+        strcpy(pathTestSrc, pathTest);
+        strcat(pathTestSrc, "/src");
+
+        if (!directoryCreate(pathTest, "main") || !directoryCreate(pathTest, "project"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTestMain[MAX_LENGTH_PATH];
+        strcpy(pathTestMain, pathTestSrc);
+        strcat(pathTestMain, "/main");
+
+        if (!directoryCreate(pathTest, "c") || !directoryCreate(pathTest, "genTests"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTestTarget[MAX_LENGTH_PATH];
+        strcpy(pathTestTarget, pathTest);
+        strcat(pathTestTarget, "/target");
+
+        if (!directoryCreate(pathTestTarget, "project") || !directoryCreate(pathTestTarget, "test"))
         {
             printf("[ERROR] : Something went wrong during project creation | create \n");
             return;
@@ -657,17 +755,20 @@ void testBuild(char *path)
         strcat(srcPath, "/src/test/src/project");
         strcat(destPath, "/src/test/target/project");
 
-        int fileCounter = 0;
-        int alteredFiles = 0;
+        int fileCounterProject = 0;
+        int alteredFilesProject = 0;
 
-        char *oFileListProject = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+        char *oFileListProject = compile(destPath, srcPath, projectPath, true, &fileCounterProject, &alteredFilesProject);
 
         strcpy(srcPath, projectPath);
         strcpy(destPath, projectPath);
         strcat(srcPath, "/src/test/src/main/genTests");
         strcat(destPath, "/src/test/target/test");
 
-        char *oFileListTest = compile(destPath, srcPath, projectPath, true, &fileCounter, &alteredFiles);
+        int fileCounterTest = 0;
+        int alteredFilesTest = 0;
+
+        char *oFileListTest = compile(destPath, srcPath, projectPath, true, &fileCounterTest, &alteredFilesTest);
 
         List *tests = listCreate(sizeof(char *), &stringCopy, NULL);
         char *testOFiles = stringCreate(NULL);
@@ -715,6 +816,8 @@ void testBuild(char *path)
         }
 
         free(token);
+
+        List *testExe = listCreate(sizeof(char *), &stringCopy, NULL);
 
         for (int i = 0; i < listLength(tests); i++)
         {
@@ -770,6 +873,10 @@ void testBuild(char *path)
 
             linkTest(binDirPathTemp, listFiles, builderFilePath, testName);
 
+            binDirPathTemp = stringCat(binDirPathTemp, "/");
+            binDirPathTemp = stringCat(binDirPathTemp, testName);
+            listAdd(testExe, binDirPathTemp);
+
             free(testFile);
             free(listFiles);
             listFree(mockFiles);
@@ -781,6 +888,203 @@ void testBuild(char *path)
         free(testOFiles);
         listFree(tests);
         listFree(mockList);
+
+        char pathExe[MAX_LENGTH_PATH];
+        strcpy(pathExe, binDirPath);
+        strcat(pathExe, "/test.c");
+
+        FILE *file = fopen(pathExe, "w");
+
+        char *baseFile = "#include <stdlib.h>\nint main(){\n\t";
+
+        for (int i = 0; i < strlen(baseFile); i++)
+        {
+            c = baseFile[i];
+            putc(c, file);
+        }
+
+        char *template = stringCreate("system(\"$PATH\");\n\t");
+        char *templateLast = stringCreate("system(\"$PATH 1\");\n\t");
+
+        for (int i = 0; i < listLength(testExe); i++)
+        {
+            char *testPath = listGet(testExe, i);
+            char *templateTemp;
+            if (i + 1 == listLength(testExe))
+            {
+                templateTemp = stringCreate(templateLast);
+            }
+            else
+            {
+                templateTemp = stringCreate(template);
+            }
+            templateTemp = stringReplace(templateTemp, "$PATH", testPath);
+
+            for (int j = 0; j < strlen(templateTemp); j++)
+            {
+                c = templateTemp[j];
+                putc(c, file);
+            }
+
+            free(testPath);
+            free(templateTemp);
+        }
+
+        putc('\n', file);
+        putc('}', file);
+
+        fclose(file);
+        listFree(testExe);
+        free(template);
+        free(templateLast);
+
+        char oPath[MAX_LENGTH_PATH];
+        strcpy(oPath, binDirPath);
+        strcat(oPath, "/test.o");
+
+        char *systemCommand = stringCreate(NULL);
+        systemCommand = getCommand("debug", builderFilePath, systemCommand);
+        systemCommand = stringReplace(systemCommand, "$CFILE", pathExe);
+        systemCommand = stringReplace(systemCommand, "$OBJFILE", oPath);
+
+        system(systemCommand);
+
+        linkTest(binDirPath, oPath, builderFilePath, "test");
+
+        remove(oPath);
+        remove(pathExe);
+
+        free(systemCommand);
+
+        char fileCounterProjectC[16];
+        char alteredFileCounterProjectC[16];
+        sprintf(fileCounterProjectC, "%d", fileCounterProject);
+        sprintf(alteredFileCounterProjectC, "%d", alteredFilesProject);
+
+        char fileCounterTestC[16];
+        char alteredFileCounterTestC[16];
+        sprintf(fileCounterTestC, "%d", fileCounterTest);
+        sprintf(alteredFileCounterTestC, "%d", alteredFilesTest);
+
+        printf(SEPERATOR);
+        printf(HEADING, "S U C C E S S");
+        printf(LINE, "Files compiled (project):", alteredFileCounterProjectC);
+        printf(LINE, "Files linked (project):", fileCounterProjectC);
+        printf(LINE, "Files compiled (test):", alteredFileCounterTestC);
+        printf(LINE, "Files linked (test):", fileCounterTestC);
+        printf(SEPERATOR);
+    }
+    else
+    {
+        printf(SEPERATOR);
+        printf(HEADING, "E R R O R");
+        printf(LINE, "No CBuilder project was found at:", projectPath);
+        printf(SEPERATOR);
+        return;
+    }
+}
+
+void testClear(char *path)
+{
+    char projectPath[MAX_LENGTH_PATH];
+    bool project = false;
+
+    int st1 = findProject(path, projectPath);
+
+    if (st1 == -1)
+    {
+        directoryNormalizePath(projectPath, path);
+        project = false;
+    }
+    else
+    {
+        project = true;
+    }
+
+    if (project)
+    {
+        char targetProjectPath[MAX_LENGTH_PATH];
+        char targetTestPath[MAX_LENGTH_PATH];
+        char testProjectPath[MAX_LENGTH_PATH];
+        char genTestPath[MAX_LENGTH_PATH];
+
+        strcpy(targetProjectPath, projectPath);
+        strcat(targetProjectPath, "/src/test/target/project");
+
+        strcpy(targetTestPath, projectPath);
+        strcat(targetTestPath, "/src/test/target/test");
+
+        strcpy(testProjectPath, projectPath);
+        strcat(testProjectPath, "/src/test/src/project");
+
+        strcpy(genTestPath, projectPath);
+        strcat(genTestPath, "/src/test/src/main/genTests");
+
+        Directory *targetProjectPathDir = directoryGet(targetProjectPath);
+
+        if (targetProjectPathDir == NULL)
+        {
+            printf("[ERROR] : Directory for the specified path was not found | clear \n");
+            return;
+        }
+
+        Directory *targetTestPathDir = directoryGet(targetTestPath);
+
+        if (targetTestPathDir == NULL)
+        {
+            printf("[ERROR] : Directory for the specified path was not found | clear \n");
+            return;
+        }
+
+        Directory *testProjectPathDir = directoryGet(testProjectPath);
+
+        if (testProjectPathDir == NULL)
+        {
+            printf("[ERROR] : Directory for the specified path was not found | clear \n");
+            return;
+        }
+
+        Directory *genTestPathDir = directoryGet(genTestPath);
+
+        if (genTestPathDir == NULL)
+        {
+            printf("[ERROR] : Directory for the specified path was not found | clear \n");
+            return;
+        }
+
+        int st1 = directoryClear(targetProjectPathDir);
+        int st2 = directoryClear(targetTestPathDir);
+        int st3 = directoryClear(testProjectPathDir);
+        int st4 = directoryClear(genTestPathDir);
+
+        if (st1 == -1 || st2 == -1 || st3 == -1 || st4 == -1)
+        {
+            printf("[ERROR] : Function directoryClear was not able to clear the directory | clear \n");
+            return;
+        }
+
+        directoryFree(targetProjectPathDir);
+        directoryFree(targetTestPathDir);
+        directoryFree(testProjectPathDir);
+        directoryFree(genTestPathDir);
+
+        char st1C[16];
+        char st2C[16];
+        char st3C[16];
+        char st4C[16];
+
+        sprintf(st1C, "%d", st1);
+        sprintf(st2C, "%d", st2);
+        sprintf(st3C, "%d", st3);
+        sprintf(st4C, "%d", st4);
+
+        printf(SEPERATOR);
+        printf(HEADING, "S U C C E S S");
+        printf(LINE, "Files deleted in target/project:", st1C);
+        printf(LINE, "Files deleted in target/test:", st2C);
+        printf(LINE, "Files deleted in src/project:", st3C);
+        printf(LINE, "Files deleted in main/genTests:", st4C);
+        printf(SEPERATOR);
     }
     else
     {
@@ -974,18 +1278,18 @@ bool isProject(Directory *dir)
         return false;
     }
 
+    directoryFree(dirTarget);
+
     Directory *dirSrc = directoryGetSub(dir, "src");
 
     if (dirSrc == NULL)
     {
-        directoryFree(dirTarget);
         printf("[ERROR] : Could not find sub directory | isProject \n");
         return false;
     }
 
     if (!directoryIsEntry(dirSrc, "main", TYPE_DIRECTORY) || !directoryIsEntry(dirSrc, "test", TYPE_DIRECTORY))
     {
-        directoryFree(dirTarget);
         directoryFree(dirSrc);
         return false;
     }
@@ -994,7 +1298,6 @@ bool isProject(Directory *dir)
 
     if (dirMain == NULL)
     {
-        directoryFree(dirTarget);
         directoryFree(dirSrc);
         printf("[ERROR] : Could not find sub directory | isProject \n");
         return false;
@@ -1002,15 +1305,86 @@ bool isProject(Directory *dir)
 
     if (!directoryIsEntry(dirMain, "c", TYPE_DIRECTORY) || !directoryIsEntry(dirMain, "ressources", TYPE_DIRECTORY))
     {
-        directoryFree(dirTarget);
         directoryFree(dirSrc);
         directoryFree(dirMain);
         return false;
     }
 
-    directoryFree(dirTarget);
-    directoryFree(dirSrc);
     directoryFree(dirMain);
+
+    Directory *dirTest = directoryGetSub(dirSrc, "test");
+
+    if (dirTest == NULL)
+    {
+        directoryFree(dirSrc);
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirTest, "bin", TYPE_DIRECTORY) || !directoryIsEntry(dirTest, "src", TYPE_DIRECTORY) || !directoryIsEntry(dirTest, "target", TYPE_DIRECTORY))
+    {
+        directoryFree(dirSrc);
+        directoryFree(dirTest);
+        return false;
+    }
+
+    directoryFree(dirSrc);
+
+    Directory *dirTestSrc = directoryGetSub(dirTest, "src");
+
+    if (dirTestSrc == NULL)
+    {
+        directoryFree(dirTest);
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirTestSrc, "main", TYPE_DIRECTORY) || !directoryIsEntry(dirTestSrc, "project", TYPE_DIRECTORY))
+    {
+        directoryFree(dirTest);
+        directoryFree(dirTestSrc);
+        return false;
+    }
+
+    Directory *dirTestMain = directoryGetSub(dirTestSrc, "main");
+
+    if (dirTestMain == NULL)
+    {
+        directoryFree(dirTest);
+        directoryFree(dirTestSrc);
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirTestMain, "c", TYPE_DIRECTORY) || !directoryIsEntry(dirTestMain, "genTests", TYPE_DIRECTORY))
+    {
+        directoryFree(dirTestMain);
+        directoryFree(dirTest);
+        directoryFree(dirTestSrc);
+        return false;
+    }
+
+    directoryFree(dirTestMain);
+    directoryFree(dirTestSrc);
+
+    Directory *dirTestTarget = directoryGetSub(dirTest, "target");
+
+    if (dirTestTarget == NULL)
+    {
+        directoryFree(dirTest);
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirTestTarget, "project", TYPE_DIRECTORY) || !directoryIsEntry(dirTestTarget, "test", TYPE_DIRECTORY))
+    {
+        directoryFree(dirTestTarget);
+        directoryFree(dirTest);
+        return false;
+    }
+
+    directoryFree(dirTest);
+    directoryFree(dirTestTarget);
 
     return true;
 }

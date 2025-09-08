@@ -54,6 +54,10 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
+
+
 bool isProject(Directory *dir)
 {
     if (dir == NULL)

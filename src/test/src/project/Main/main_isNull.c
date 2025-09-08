@@ -60,6 +60,10 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
+
+
 bool isNull(void **p, int length)
 {
     if (p == NULL)

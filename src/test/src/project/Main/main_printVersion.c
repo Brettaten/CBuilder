@@ -40,6 +40,8 @@ bool utilIsInArray(char *arr, int length, int c);
 
 
 
+
+
 void printVersion()
 {
     printf(SEPERATOR);
