@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "C:/Users/richt/Programmieren/C/CBuilder/src/test/src/main/genTests/util/cbuilderTest.h"
+#include "/Users/elivagar/Programs/CBuilder/src/test/src/main/genTests/util/cbuilderTest.h"
 int main(int argc, char *argv[]){
 	int64_t before, after, time;
-	strcpy(path,"C:/Users/richt/Programmieren/C/CBuilder/src/test/src/main/genTests/util/temp.txt");
+	strcpy(path,"/Users/elivagar/Programs/CBuilder/src/test/src/main/genTests/util/temp.txt");
 	bool isEnd = false;
 	if(argc == 2){
 		int end = atoi(argv[1]);
