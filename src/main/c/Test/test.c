@@ -1162,7 +1162,7 @@ List *generateTests(char *destPath, char *srcPath)
                             putc(c, testFile);
                         }
 
-                        char *template = stringCreate("\tpassed = true;\n\tprintf(\"TEST $NUM | $NAME\\n\");\n\tbefore = getTime();\n\t$NAME();\n\tafter = getTime();\n\ttime = after - before;\n\tprintf(\"Execution time: %ld ms\", time);\n\texecutionTime += time;\n\ttestExe++;\n\tif(passed){\n\t\tprintf(\" | PASSED\\n\");\n\t\ttestPassed++;\n\t} else{\n\t\tprintf(\" | FAILED\\n\");\n\t\ttestFailed++;\n\t}\n");
+                        char *template = stringCreate("\tpassed = true;\n\tprintf(\"TEST $NUM | $NAME\\n\");\n\tbefore = getTime();\n\t$NAME();\n\tafter = getTime();\n\ttime = after - before;\n\tprintf(\"Execution time: %lld ms\", time);\n\texecutionTime += time;\n\ttestExe++;\n\tif(passed){\n\t\tprintf(\" | PASSED\\n\");\n\t\ttestPassed++;\n\t} else{\n\t\tprintf(\" | FAILED\\n\");\n\t\ttestFailed++;\n\t}\n");
 
                         for (int i = 0; i < listLength(testFunc); i++)
                         {
@@ -1188,7 +1188,7 @@ List *generateTests(char *destPath, char *srcPath)
                             free(currTemplate);
                         }
 
-                        char *cleanUp = stringCreate("\tif(isEnd && testExe > 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\ttestPassedRel = ((double)testPassed / (double)testExe) * 100.0;\n\t\ttestFailedRel = ((double)testFailed / (double)testExe) * 100.0;\n\t\tprintf(\"Tests executed: %d | Total execution time: %d ms\\n\",testExe, executionTime);\n\t\tprintf(\"Tests passed: %d | %.2f %\\n\",testPassed, testPassedRel);\n\t\tprintf(\"Tests failed: %d | %.2f %\\n\",testFailed, testFailedRel);\n\t\tremove(path);\n\t} else if(isEnd && testExe == 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\tprintf(\"No test was executed\");\n\t}\n\telse{\n\t\tsaveStats();\n\t}\n");
+                        char *cleanUp = stringCreate("\tif(isEnd && testExe > 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\ttestPassedRel = ((double)testPassed / (double)testExe) * 100.0;\n\t\ttestFailedRel = ((double)testFailed / (double)testExe) * 100.0;\n\t\tprintf(\"Tests executed: %d | Total execution time: %d ms\\n\",testExe, executionTime);\n\t\tprintf(\"Tests passed: %d | %.2f %%\\n\",testPassed, testPassedRel);\n\t\tprintf(\"Tests failed: %d | %.2f %%\\n\",testFailed, testFailedRel);\n\t\tremove(path);\n\t} else if(isEnd && testExe == 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\tprintf(\"No test was executed\");\n\t}\n\telse{\n\t\tsaveStats();\n\t}\n");
 
                         for (int i = 0; i < strlen(cleanUp); i++)
                         {

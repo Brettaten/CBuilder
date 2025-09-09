@@ -4,7 +4,7 @@
 #include "util/cbuilderTest.h"
 
 int listAdd(){
-    
+    return 0;
 }
 
 void testPrintHappyFlow(){
