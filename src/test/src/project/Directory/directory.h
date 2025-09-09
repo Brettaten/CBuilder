@@ -251,9 +251,7 @@ bool fileCreate(char *path, char *fileName);
  * Function used to copy one file to another
  * 
  * @param destPath The path to the destination file
- * @param destName The name of the destination file
  * @param srcPath The path to the source file
- * @param srcName The name of the source file
  * 
  * @return Success: true | Failure: false
  */

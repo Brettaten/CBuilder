@@ -36,7 +36,7 @@ void printHelpBuild()
 {
     printf(SEPERATOR);
     printf(HEADING, "B U I L D");
-    printf(INFO, "By using this command, CBuilder compiles all c files int the src/main/c directory to object files.");
+    printf(INFO, "By using this command, CBuilder compiles all c files into the src/main/c directory to object files.");
     printf(INFO, "When using the -d flag, the object files are placed in target/debug when not in target/prod.");
     printf(INFO, "Lastly, the object files are linked and the executable is placed in the bin directory.");
     printf(EMPTY);

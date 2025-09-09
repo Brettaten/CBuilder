@@ -1,6 +1,7 @@
 #include "test.h"
 #include <stdio.h>
 #include <stdint.h>
+#include "util/cbuilderTest.h"
 
 int listAdd(){
     
@@ -22,6 +23,7 @@ void testsdfsdfsd(){
         z++;
     }
     printf("%d\n", z);
+    assert(1 == 0);
 }
 
 void testasgddsg(){

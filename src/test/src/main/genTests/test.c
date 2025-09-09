@@ -1,6 +1,7 @@
 #include "test.h"
 #include <stdio.h>
 #include <stdint.h>
+#include "util/cbuilderTest.h"
 
 int listAdd(){
     
@@ -22,6 +23,7 @@ void testsdfsdfsd(){
         z++;
     }
     printf("%d\n", z);
+    assert(1 == 0);
 }
 
 void testasgddsg(){
@@ -53,7 +55,7 @@ void testasdgsdfsdf(){
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "util/cbuilderTest.h"
+#include "C:/Users/richt/Programmieren/C/CBuilder/src/test/src/main/genTests/util/cbuilderTest.h"
 int main(int argc, char *argv[]){
 	int64_t before, after, time;
 	strcpy(path,"C:/Users/richt/Programmieren/C/CBuilder/src/test/src/main/genTests/util/temp.txt");
@@ -65,6 +67,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 	getStats();
+	passed = true;
 	printf("TEST 1 | testPrintHappyFlow\n");
 	before = getTime();
 	testPrintHappyFlow();
@@ -80,6 +83,7 @@ int main(int argc, char *argv[]){
 		printf(" | FAILED\n");
 		testFailed++;
 	}
+	passed = true;
 	printf("TEST 2 | testsdfsdfsd\n");
 	before = getTime();
 	testsdfsdfsd();
@@ -95,6 +99,7 @@ int main(int argc, char *argv[]){
 		printf(" | FAILED\n");
 		testFailed++;
 	}
+	passed = true;
 	printf("TEST 3 | testasgddsg\n");
 	before = getTime();
 	testasgddsg();
@@ -110,6 +115,7 @@ int main(int argc, char *argv[]){
 		printf(" | FAILED\n");
 		testFailed++;
 	}
+	passed = true;
 	printf("TEST 4 | testagdfsadf\n");
 	before = getTime();
 	testagdfsadf();
@@ -125,6 +131,7 @@ int main(int argc, char *argv[]){
 		printf(" | FAILED\n");
 		testFailed++;
 	}
+	passed = true;
 	printf("TEST 5 | testasdgsdfsdf\n");
 	before = getTime();
 	testasdgsdfsdf();
@@ -142,9 +149,9 @@ int main(int argc, char *argv[]){
 	}
 	if(isEnd && testExe > 0){
 		printf("--------------------------------------------------\n");
-		testPassedRel = (testPassed / testExe) * 100;
-		testFailedRel = (testFailed / testExe) * 100;
-		printf("Tests executed: %d | Total execution time: %d\n",testExe, executionTime);
+		testPassedRel = ((double)testPassed / (double)testExe) * 100.0;
+		testFailedRel = ((double)testFailed / (double)testExe) * 100.0;
+		printf("Tests executed: %d | Total execution time: %d ms\n",testExe, executionTime);
 		printf("Tests passed: %d | %.2f %\n",testPassed, testPassedRel);
 		printf("Tests failed: %d | %.2f %\n",testFailed, testFailedRel);
 		remove(path);

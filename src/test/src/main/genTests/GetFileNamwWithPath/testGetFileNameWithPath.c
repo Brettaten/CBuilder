@@ -1,24 +1,27 @@
-#include "test.h"
-#include <stdio.h>
-#include <stdint.h>
+#include "testGetFileNameWithPath.h"
+#include "../util/cbuilderTest.h"
+#include "../../../../../main/c/Main/main.h"
 
-void testP1(){
-    int z = 0;
-    
-    for(int64_t x = 0; x != 1000000000; x++){
-        z++;
-    }
-    printf("%d\n", z);
+#include <string.h>
+#include <stdlib.h>
+
+void testGetFileWithPathHappyFlow()
+{
+    char *path = "foo/test";
+
+    char *res = getFileNameWithPath(path);
+
+    assert(strcmp(res, "test") == 0);
 }
 
-void test2(){
-    int z = 0;
-    
-    for(int64_t x = 0; x != 1000000000; x++){
-        z++;
-    }
-    printf("%d\n", z);
+char *stringCreate(char *value){
+    char *temp = (char *) malloc(sizeof(char) * 10);
+
+    strcpy(temp, "foo");
+
+    return temp;
 }
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -35,9 +38,9 @@ int main(int argc, char *argv[]){
 	}
 	getStats();
 	passed = true;
-	printf("TEST 6 | testP1\n");
+	printf("TEST 7 | testGetFileWithPathHappyFlow\n");
 	before = getTime();
-	testP1();
+	testGetFileWithPathHappyFlow();
 	after = getTime();
 	time = after - before;
 	printf("Execution time: %ld ms", time);

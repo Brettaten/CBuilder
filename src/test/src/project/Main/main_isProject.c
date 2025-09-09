@@ -85,18 +85,18 @@ bool isProject(Directory *dir)
         return false;
     }
 
+    directoryFree(dirTarget);
+
     Directory *dirSrc = directoryGetSub(dir, "src");
 
     if (dirSrc == NULL)
     {
-        directoryFree(dirTarget);
         printf("[ERROR] : Could not find sub directory | isProject \n");
         return false;
     }
 
     if (!directoryIsEntry(dirSrc, "main", TYPE_DIRECTORY) || !directoryIsEntry(dirSrc, "test", TYPE_DIRECTORY))
     {
-        directoryFree(dirTarget);
         directoryFree(dirSrc);
         return false;
     }
@@ -105,7 +105,6 @@ bool isProject(Directory *dir)
 
     if (dirMain == NULL)
     {
-        directoryFree(dirTarget);
         directoryFree(dirSrc);
         printf("[ERROR] : Could not find sub directory | isProject \n");
         return false;
@@ -113,15 +112,86 @@ bool isProject(Directory *dir)
 
     if (!directoryIsEntry(dirMain, "c", TYPE_DIRECTORY) || !directoryIsEntry(dirMain, "ressources", TYPE_DIRECTORY))
     {
-        directoryFree(dirTarget);
         directoryFree(dirSrc);
         directoryFree(dirMain);
         return false;
     }
 
-    directoryFree(dirTarget);
-    directoryFree(dirSrc);
     directoryFree(dirMain);
+
+    Directory *dirTest = directoryGetSub(dirSrc, "test");
+
+    if (dirTest == NULL)
+    {
+        directoryFree(dirSrc);
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirTest, "bin", TYPE_DIRECTORY) || !directoryIsEntry(dirTest, "src", TYPE_DIRECTORY) || !directoryIsEntry(dirTest, "target", TYPE_DIRECTORY))
+    {
+        directoryFree(dirSrc);
+        directoryFree(dirTest);
+        return false;
+    }
+
+    directoryFree(dirSrc);
+
+    Directory *dirTestSrc = directoryGetSub(dirTest, "src");
+
+    if (dirTestSrc == NULL)
+    {
+        directoryFree(dirTest);
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirTestSrc, "main", TYPE_DIRECTORY) || !directoryIsEntry(dirTestSrc, "project", TYPE_DIRECTORY))
+    {
+        directoryFree(dirTest);
+        directoryFree(dirTestSrc);
+        return false;
+    }
+
+    Directory *dirTestMain = directoryGetSub(dirTestSrc, "main");
+
+    if (dirTestMain == NULL)
+    {
+        directoryFree(dirTest);
+        directoryFree(dirTestSrc);
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirTestMain, "c", TYPE_DIRECTORY) || !directoryIsEntry(dirTestMain, "genTests", TYPE_DIRECTORY))
+    {
+        directoryFree(dirTestMain);
+        directoryFree(dirTest);
+        directoryFree(dirTestSrc);
+        return false;
+    }
+
+    directoryFree(dirTestMain);
+    directoryFree(dirTestSrc);
+
+    Directory *dirTestTarget = directoryGetSub(dirTest, "target");
+
+    if (dirTestTarget == NULL)
+    {
+        directoryFree(dirTest);
+        printf("[ERROR] : Could not find sub directory | isProject \n");
+        return false;
+    }
+
+    if (!directoryIsEntry(dirTestTarget, "project", TYPE_DIRECTORY) || !directoryIsEntry(dirTestTarget, "test", TYPE_DIRECTORY))
+    {
+        directoryFree(dirTestTarget);
+        directoryFree(dirTest);
+        return false;
+    }
+
+    directoryFree(dirTest);
+    directoryFree(dirTestTarget);
 
     return true;
 }

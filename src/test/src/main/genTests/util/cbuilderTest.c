@@ -97,3 +97,10 @@ void getStats()
 
     fclose(file);
 }
+
+void assert(bool condition)
+{
+    if(!condition){
+        passed = false;
+    }
+}

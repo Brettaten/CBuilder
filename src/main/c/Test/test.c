@@ -1064,23 +1064,27 @@ List *generateTests(char *destPath, char *srcPath)
                     for (int i = 0; i < listLength(fileNamesList); i++)
                     {
                         char *funcName = listGet(fileNamesList, i);
+                        char *tempFuncName = getFileNameWithPathSplit(funcName);
 
-                        if (5 > strlen(funcName) - 3)
+                        free(funcName);
+
+                        tempFuncName = stringSub(tempFuncName, 0, strlen(tempFuncName) - 3);
+
+                        if (tempFuncName == NULL)
                         {
-                            free(funcName);
-                            continue;
+                            printf("[ERROR] : function listGet failed | generateTests \n");
+                            return NULL;
                         }
 
-                        funcName = stringSub(funcName, 5, strlen(funcName) - 3);
-                        char *funcPrefix = stringSub(funcName, 0, 3);
+                        char *funcPrefix = stringSub(tempFuncName, 0, 3);
 
                         if (strcmp(funcPrefix, "test") != 0 && strcmp(funcPrefix, "util") != 0 && strcmp(funcName, name) != 0)
                         {
-                            funcName = stringCat(funcName, ".o");
-                            listAdd(mockListTemp, funcName);
+                            tempFuncName = stringCat(tempFuncName, ".o");
+                            listAdd(mockListTemp, tempFuncName);
                         }
 
-                        free(funcName);
+                        free(tempFuncName);
                         free(funcPrefix);
                     }
                     listFree(fileNamesList);
@@ -1124,7 +1128,6 @@ List *generateTests(char *destPath, char *srcPath)
                             {
                                 printf("[ERROR] : function listGet failed | generateTests \n");
                                 return NULL;
-                                ;
                             }
 
                             char *funcPrefix = stringSub(tempTestName, 0, 3);
@@ -1140,13 +1143,17 @@ List *generateTests(char *destPath, char *srcPath)
 
                         FILE *testFile = fopen(dest, "a");
 
-                        char *path = stringCreate(destPath);
-                        path = stringCat(path, "/util/temp.txt");
+                        char *pathTemp = stringCreate(destPath);
+                        pathTemp = stringCat(pathTemp, "/util/temp.txt");
+                        char *pathUtil = stringCreate(destPath);
+                        pathUtil = stringCat(pathUtil, "/util/cbuilderTest.h");
 
-                        char *main = stringCreate("\n#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n#include \"util/cbuilderTest.h\"\nint main(int argc, char *argv[]){\n\tint64_t before, after, time;\n\tstrcpy(path,\"$PATH\");\n\tbool isEnd = false;\n\tif(argc == 2){\n\t\tint end = atoi(argv[1]);\n\t\tif(end == 1){\n\t\t\tisEnd = true;\n\t\t}\n\t}\n\tgetStats();\n");
-                        main = stringReplace(main, "$PATH", path);
+                        char *main = stringCreate("\n#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n#include \"$PATHUTIL\"\nint main(int argc, char *argv[]){\n\tint64_t before, after, time;\n\tstrcpy(path,\"$PATHTEMP\");\n\tbool isEnd = false;\n\tif(argc == 2){\n\t\tint end = atoi(argv[1]);\n\t\tif(end == 1){\n\t\t\tisEnd = true;\n\t\t}\n\t}\n\tgetStats();\n");
+                        main = stringReplace(main, "$PATHTEMP", pathTemp);
+                        main = stringReplace(main, "$PATHUTIL", pathUtil);
 
-                        free(path);
+                        free(pathTemp);
+                        free(pathUtil);
 
                         int c;
                         for (int i = 0; i < strlen(main); i++)
@@ -1155,7 +1162,7 @@ List *generateTests(char *destPath, char *srcPath)
                             putc(c, testFile);
                         }
 
-                        char *template = stringCreate("\tprintf(\"TEST $NUM | $NAME\\n\");\n\tbefore = getTime();\n\t$NAME();\n\tafter = getTime();\n\ttime = after - before;\n\tprintf(\"Execution time: %ld ms\", time);\n\texecutionTime += time;\n\ttestExe++;\n\tif(passed){\n\t\tprintf(\" | PASSED\\n\");\n\t\ttestPassed++;\n\t} else{\n\t\tprintf(\" | FAILED\\n\");\n\t\ttestFailed++;\n\t}\n");
+                        char *template = stringCreate("\tpassed = true;\n\tprintf(\"TEST $NUM | $NAME\\n\");\n\tbefore = getTime();\n\t$NAME();\n\tafter = getTime();\n\ttime = after - before;\n\tprintf(\"Execution time: %ld ms\", time);\n\texecutionTime += time;\n\ttestExe++;\n\tif(passed){\n\t\tprintf(\" | PASSED\\n\");\n\t\ttestPassed++;\n\t} else{\n\t\tprintf(\" | FAILED\\n\");\n\t\ttestFailed++;\n\t}\n");
 
                         for (int i = 0; i < listLength(testFunc); i++)
                         {
@@ -1181,7 +1188,7 @@ List *generateTests(char *destPath, char *srcPath)
                             free(currTemplate);
                         }
 
-                        char *cleanUp = stringCreate("\tif(isEnd && testExe > 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\ttestPassedRel = (testPassed / testExe) * 100;\n\t\ttestFailedRel = (testFailed / testExe) * 100;\n\t\tprintf(\"Tests executed: %d | Total execution time: %d\\n\",testExe, executionTime);\n\t\tprintf(\"Tests passed: %d | %.2f %\\n\",testPassed, testPassedRel);\n\t\tprintf(\"Tests failed: %d | %.2f %\\n\",testFailed, testFailedRel);\n\t\tremove(path);\n\t} else if(isEnd && testExe == 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\tprintf(\"No test was executed\");\n\t}\n\telse{\n\t\tsaveStats();\n\t}\n");
+                        char *cleanUp = stringCreate("\tif(isEnd && testExe > 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\ttestPassedRel = ((double)testPassed / (double)testExe) * 100.0;\n\t\ttestFailedRel = ((double)testFailed / (double)testExe) * 100.0;\n\t\tprintf(\"Tests executed: %d | Total execution time: %d ms\\n\",testExe, executionTime);\n\t\tprintf(\"Tests passed: %d | %.2f %\\n\",testPassed, testPassedRel);\n\t\tprintf(\"Tests failed: %d | %.2f %\\n\",testFailed, testFailedRel);\n\t\tremove(path);\n\t} else if(isEnd && testExe == 0){\n\t\tprintf(\"--------------------------------------------------\\n\");\n\t\tprintf(\"No test was executed\");\n\t}\n\telse{\n\t\tsaveStats();\n\t}\n");
 
                         for (int i = 0; i < strlen(cleanUp); i++)
                         {

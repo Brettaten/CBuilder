@@ -2,6 +2,13 @@
 #include <stdbool.h>
 
 /**
+ * Function used to test a function. If just one assert per test is false, it will fail
+ * 
+ * @param condition
+ */
+void assert(bool condition);
+
+/**
  * Platform independent function that returns the time in milliseconds
  */
 int64_t getTime();

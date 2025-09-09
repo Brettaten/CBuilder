@@ -89,21 +89,22 @@ void create(char *path)
         }
 
         char pathBuilderfileDest[MAX_LENGTH_PATH];
-        strcpy(pathBuilderfileDest, path);
-        strcpy(pathBuilderfileDest, "/cbuilderfile");
+        strcpy(pathBuilderfileDest, projectPath);
+        strcat(pathBuilderfileDest, "/cbuilderfile");
 
         char pathBuilderfileSrc[MAX_LENGTH_PATH];
         strcpy(pathBuilderfileSrc, directoryGetPath(ressource));
+        strcat(pathBuilderfileSrc, "/");
         strcat(pathBuilderfileSrc, entryGetName(template));
 
-        if (!directoryCreate(path, "bin") || !directoryCreate(path, "src") || !directoryCreate(path, "target") || !fileCreate(path, "cbuilderfile") || !fileCopy(pathBuilderfileDest, pathBuilderfileSrc))
+        if (!directoryCreate(projectPath, "bin") || !directoryCreate(projectPath, "src") || !directoryCreate(projectPath, "target") || !fileCreate(projectPath, "cbuilderfile") || !fileCopy(pathBuilderfileDest, pathBuilderfileSrc))
         {
             printf("[ERROR] : Something went wrong during project creation | create \n");
             return;
         }
 
         char pathTarget[MAX_LENGTH_PATH];
-        strcpy(pathTarget, path);
+        strcpy(pathTarget, projectPath);
         strcat(pathTarget, "/target");
 
         if (!directoryCreate(pathTarget, "prod") || !directoryCreate(pathTarget, "debug"))
@@ -113,7 +114,7 @@ void create(char *path)
         }
 
         char pathSrc[MAX_LENGTH_PATH];
-        strcpy(pathSrc, path);
+        strcpy(pathSrc, projectPath);
         strcat(pathSrc, "/src");
 
         if (!directoryCreate(pathSrc, "main") || !directoryCreate(pathSrc, "test"))
@@ -127,6 +128,72 @@ void create(char *path)
         strcat(pathMain, "/main");
 
         if (!directoryCreate(pathMain, "c") || !directoryCreate(pathMain, "ressources"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTest[MAX_LENGTH_PATH];
+        strcpy(pathTest, pathSrc);
+        strcat(pathTest, "/test");
+
+        if (!directoryCreate(pathTest, "bin") || !directoryCreate(pathTest, "src") || !directoryCreate(pathTest, "target"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTestSrc[MAX_LENGTH_PATH];
+        strcpy(pathTestSrc, pathTest);
+        strcat(pathTestSrc, "/src");
+
+        if (!directoryCreate(pathTestSrc, "main") || !directoryCreate(pathTestSrc, "project"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTestMain[MAX_LENGTH_PATH];
+        strcpy(pathTestMain, pathTestSrc);
+        strcat(pathTestMain, "/main");
+
+        if (!directoryCreate(pathTestMain, "c") || !directoryCreate(pathTestMain, "genTests"))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTestC[MAX_LENGTH_PATH];
+        strcpy(pathTestC, pathTestMain);
+        strcat(pathTestC, "/c");
+
+        char pathTestUtilC[MAX_LENGTH_PATH];
+        strcpy(pathTestUtilC, pathTestC);
+        strcat(pathTestUtilC, "/util/cbuilderTest.c");
+
+        char pathTestUtilH[MAX_LENGTH_PATH];
+        strcpy(pathTestUtilH, pathTestC);
+        strcat(pathTestUtilH, "/util/cbuilderTest.h");
+
+        char pathRessourceUtilC[MAX_LENGTH_PATH];
+        strcpy(pathRessourceUtilC, directoryGetPath(ressource));
+        strcat(pathRessourceUtilC, "/util/cbuilderTest.c");
+
+        char pathRessourceUtilH[MAX_LENGTH_PATH];
+        strcpy(pathRessourceUtilH, directoryGetPath(ressource));
+        strcat(pathRessourceUtilH, "/util/cbuilderTest.h");
+
+        if (!directoryCreate(pathTestC, "util") || !fileCopy(pathTestUtilC, pathRessourceUtilC) || !fileCopy(pathTestUtilH, pathRessourceUtilH))
+        {
+            printf("[ERROR] : Something went wrong during project creation | create \n");
+            return;
+        }
+
+        char pathTestTarget[MAX_LENGTH_PATH];
+        strcpy(pathTestTarget, pathTest);
+        strcat(pathTestTarget, "/target");
+
+        if (!directoryCreate(pathTestTarget, "project") || !directoryCreate(pathTestTarget, "test"))
         {
             printf("[ERROR] : Something went wrong during project creation | create \n");
             return;
