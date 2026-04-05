@@ -129,7 +129,6 @@ linkTest {
 
 * Windows
 * Linux
-* Mac
 
 # Installation
 
@@ -140,4 +139,3 @@ linkTest {
 3. Add the path to the executable as an environment variable, based on your operating system <br>
     Windows: `PATH/CBuilder/bin/windows` <br>
     Linux: `PATH/CBuilder/bin/linux` <br>
-    Mac: `PATH/CBuilder/bin/mac` <br>
