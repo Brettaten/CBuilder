@@ -5,13 +5,3 @@ compose.yml
 .dockerignore
 
 *.bat
-
-target/debug/*
-target/prod/*
-
-src/test/bin/*.exe
-src/test/bin/*.sh
-src/test/src/main/genTests/*
-src/test/src/project/*
-src/test/target/project/*
-src/test/target/test/*
