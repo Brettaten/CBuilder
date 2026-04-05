@@ -63,16 +63,16 @@ CBuilder-project/                   |   The project root
 │         ├──bin/                   |   The location of the test executables
 │         ├──src/                   |   The directory of the test source files
 │         │    ├──main/             |   The main directory for tests
-│         │    │    ├──c/           |   The directory, were all tests are located
-│         │    │    │  └──util/     |   The directory, were test utils like the assert function are located 
-│         │    │    └──genTests/    |   The directroy, were the generated tests will be stored
-│         │    └──project/          |   The directory, were the copied and splitted files will be stored
-│         └──target/                |   The directory, were all object files will be stored
-│               ├──project/         |   The directory, were the object files of the project will be stored
-│               └──test/            |   The directory, were the object files of the tests are stored
-├──target/                          |   The directory, where all object files are located
-│    ├──prod/                       |   The directory, where all object files without debug information are stored
-│    └──debug/                      |   The directory, where all object files with debug information are stored
+│         │    │    ├──c/           |   The directory where all tests are located
+│         │    │    │  └──util/     |   The directory where test utils like the assert function are located 
+│         │    │    └──genTests/    |   The directroy where the generated tests will be stored
+│         │    └──project/          |   The directory where the copied and splitted files will be stored
+│         └──target/                |   The directory where all object files will be stored
+│               ├──project/         |   The directory where the object files of the project will be stored
+│               └──test/            |   The directory where the object files of the tests are stored
+├──target/                          |   The directory where all object files are located
+│    ├──prod/                       |   The directory where all object files without debug information are stored
+│    └──debug/                      |   The directory where all object files with debug information are stored
 └──cbuilderfile                     |   The cbuilderfile
 ```
 
@@ -128,7 +128,8 @@ linkTest {
 # Support
 
 * Windows
-* Linux
+* Linux (Debian 13)
+* (Mac): CBuilder was originally designed to support Mac but that's not the case anymore, so you will have to try to compile it yourself and it might work
 
 # Installation
 
