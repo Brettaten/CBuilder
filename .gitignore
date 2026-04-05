@@ -4,14 +4,13 @@ dockerfile
 compose.yml
 .dockerignore
 
-*.exe
-*.sh
 *.bat
 
 target/debug/*
 target/prod/*
-tests/
 
+src/test/bin/*.exe
+src/test/bin/*.sh
 src/test/src/main/genTests/*
 src/test/src/project/*
 src/test/target/project/*
