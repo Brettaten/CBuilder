@@ -82,7 +82,7 @@ CBuilder-project/                   |   The project root
 * The default compiler is gcc
 * It is possible to alter the cbuilderfile
 * It is not possible to add new commands
-* To change the default, modifie the cbuilderfile of this repository at `src/main/ressources/cbuilderfile`
+* To change the default, modify the cbuilderfile of this repository at `src/main/ressources/cbuilderfile`
 
 Each new CBuilder project generates a cbuilderfile, which looks like this:
 
